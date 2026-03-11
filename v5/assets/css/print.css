@@ -1,0 +1,307 @@
+/* ============================================================
+   POS System — Print Styles  (assets/css/print.css)
+   Handles: A4 invoices, Thermal receipts, Barcode sheets
+   ============================================================ */
+
+/* ── Base print reset ───────────────────────────────────────── */
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+  body { background: white; color: black; font-family: Arial, sans-serif; font-size: 10pt; margin: 0; }
+
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+
+  a { color: black; text-decoration: none; }
+
+  h1 { font-size: 18pt; }
+  h2 { font-size: 14pt; }
+  h3 { font-size: 12pt; }
+
+  table { border-collapse: collapse; width: 100%; }
+  th, td { padding: 4pt 6pt; text-align: left; }
+}
+
+/* ============================================================
+   A4 LANDSCAPE INVOICE — Two copies side by side
+   ============================================================ */
+.invoice-a4 {
+  width: 297mm;
+  min-height: 210mm;
+  padding: 8mm;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5mm;
+  background: white;
+  font-family: Arial, sans-serif;
+  font-size: 9pt;
+}
+
+@media print {
+  .invoice-a4 {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
+
+.invoice-copy {
+  border: 0.5pt solid #999;
+  padding: 5mm;
+  position: relative;
+}
+
+.invoice-copy-label {
+  position: absolute;
+  top: 3mm;
+  right: 4mm;
+  font-size: 7pt;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 0.5pt solid #ccc;
+  padding: 1pt 4pt;
+}
+
+.invoice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 4mm;
+  padding-bottom: 3mm;
+  border-bottom: 1pt solid #333;
+}
+
+.invoice-shop-name {
+  font-size: 14pt;
+  font-weight: bold;
+  line-height: 1.2;
+}
+
+.invoice-shop-info { font-size: 7.5pt; color: #444; line-height: 1.5; }
+
+.invoice-meta { text-align: right; font-size: 7.5pt; }
+.invoice-meta .inv-number { font-size: 10pt; font-weight: bold; }
+.invoice-meta .inv-date { color: #555; }
+
+.invoice-customer {
+  margin-bottom: 3mm;
+  padding: 2mm 3mm;
+  background: #f5f5f5;
+  border-radius: 2pt;
+  font-size: 8pt;
+}
+
+.invoice-customer strong { font-size: 9pt; }
+
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 3mm;
+  font-size: 8pt;
+}
+
+.invoice-table th {
+  background: #333;
+  color: white;
+  padding: 2mm 2mm;
+  font-size: 7pt;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.invoice-table td { padding: 1.5mm 2mm; border-bottom: 0.25pt solid #ddd; }
+.invoice-table tr:last-child td { border-bottom: none; }
+.invoice-table .text-right { text-align: right; }
+.invoice-table .line-total { font-weight: bold; }
+
+.invoice-totals {
+  margin-left: auto;
+  width: 55%;
+  border-top: 0.5pt solid #333;
+  padding-top: 2mm;
+  font-size: 8pt;
+}
+
+.invoice-totals tr td:last-child { text-align: right; font-weight: 500; }
+.invoice-totals .grand-total td {
+  font-size: 11pt;
+  font-weight: bold;
+  border-top: 1pt solid #333;
+  padding-top: 1.5mm;
+}
+
+.invoice-footer {
+  margin-top: 4mm;
+  padding-top: 3mm;
+  border-top: 0.5pt solid #ccc;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  font-size: 7.5pt;
+}
+
+.invoice-qr { text-align: center; }
+.invoice-qr canvas, .invoice-qr img { width: 20mm; height: 20mm; }
+.invoice-qr-label { font-size: 6.5pt; color: #666; margin-top: 1mm; }
+
+.invoice-signature { text-align: right; }
+.invoice-signature-line { border-top: 0.5pt solid #333; width: 40mm; margin-bottom: 1mm; }
+
+.invoice-payment-info {
+  margin-top: 3mm;
+  font-size: 7.5pt;
+  color: #444;
+}
+
+.invoice-payment-badge {
+  display: inline-block;
+  padding: 1pt 5pt;
+  border-radius: 2pt;
+  font-size: 7pt;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.payment-cash    { background: #e8f5e9; color: #2e7d32; }
+.payment-card    { background: #e3f2fd; color: #1565c0; }
+.payment-mobile  { background: #fce4ec; color: #c62828; }
+.payment-split   { background: #fff8e1; color: #f57f17; }
+
+/* ============================================================
+   THERMAL RECEIPT — 80mm width
+   ============================================================ */
+.thermal-receipt {
+  width: 80mm;
+  padding: 4mm;
+  font-family: 'Courier New', monospace;
+  font-size: 8pt;
+  background: white;
+  color: black;
+}
+
+.thermal-shop-name {
+  text-align: center;
+  font-size: 12pt;
+  font-weight: bold;
+  margin-bottom: 2mm;
+}
+
+.thermal-shop-info { text-align: center; font-size: 7pt; color: #444; line-height: 1.6; margin-bottom: 2mm; }
+
+.thermal-divider { border-top: 1pt dashed #999; margin: 2mm 0; }
+
+.thermal-inv { text-align: center; font-size: 8pt; font-weight: bold; margin-bottom: 2mm; }
+
+.thermal-line {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1mm;
+  font-size: 7.5pt;
+}
+
+.thermal-line .name { flex: 1; }
+.thermal-line .qty  { min-width: 12mm; text-align: right; }
+.thermal-line .price{ min-width: 18mm; text-align: right; }
+
+.thermal-totals { margin-top: 2mm; }
+.thermal-totals .thermal-line { font-size: 8pt; }
+.thermal-totals .total-line { font-size: 9pt; font-weight: bold; border-top: 0.5pt solid #333; padding-top: 1mm; }
+
+.thermal-payment { margin-top: 2mm; font-size: 8pt; }
+.thermal-footer  { text-align: center; font-size: 7pt; color: #555; margin-top: 3mm; line-height: 1.8; }
+
+.thermal-qr { text-align: center; margin: 3mm 0; }
+.thermal-qr canvas, .thermal-qr img { width: 24mm; height: 24mm; margin: 0 auto; }
+
+/* Thermal — showroom copy (minimal) */
+.thermal-showroom {
+  border-top: 1pt dashed #999;
+  margin-top: 4mm;
+  padding-top: 4mm;
+}
+
+.thermal-showroom .thermal-shop-name { font-size: 10pt; }
+
+/* ============================================================
+   BARCODE / QR LABEL SHEETS
+   ============================================================ */
+
+/* A4 Portrait — Labels side by side */
+.barcode-sheet-a4 {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 10mm;
+  background: white;
+  font-family: Arial, sans-serif;
+}
+
+.barcode-grid-a4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(50mm, 1fr));
+  gap: 3mm;
+}
+
+.barcode-label {
+  border: 0.5pt solid #ccc;
+  padding: 3mm;
+  text-align: center;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.barcode-label .product-name  { font-size: 8pt; font-weight: bold; margin-bottom: 1.5mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.barcode-label .variant-name  { font-size: 7pt; color: #444; margin-bottom: 1.5mm; }
+.barcode-label .barcode-img   { margin: 0 auto 1.5mm; }
+.barcode-label .barcode-number{ font-size: 7pt; font-family: monospace; letter-spacing: 0.1em; }
+.barcode-label .price          { font-size: 10pt; font-weight: bold; margin-top: 1.5mm; }
+
+/* Sticker Paper — Stacked vertically, right-aligned */
+.barcode-sheet-sticker {
+  width: 62mm;
+  padding: 3mm;
+  background: white;
+  font-family: Arial, sans-serif;
+}
+
+.barcode-label-sticker {
+  text-align: right;
+  margin-bottom: 3mm;
+  padding-bottom: 3mm;
+  border-bottom: 0.25pt dashed #ccc;
+  break-inside: avoid;
+}
+
+/* Custom Paper — Centered, full-width */
+.barcode-sheet-custom {
+  padding: 5mm;
+  background: white;
+}
+
+.barcode-label-custom {
+  text-align: center;
+  margin-bottom: 4mm;
+  break-inside: avoid;
+}
+
+/* ============================================================
+   @page rules
+   ============================================================ */
+@page invoice-a4 {
+  size: A4 landscape;
+  margin: 0;
+}
+
+@page invoice-thermal {
+  size: 80mm auto;
+  margin: 0;
+}
+
+@page barcode-a4 {
+  size: A4 portrait;
+  margin: 0;
+}
+
+@page barcode-sticker {
+  size: 62mm auto;
+  margin: 0;
+}
