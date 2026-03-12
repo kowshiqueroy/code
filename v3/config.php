@@ -3,8 +3,8 @@
 // config.php — Central configuration for POS System
 // ============================================================
 
-define('APP_NAME',    'POS System');
-define('APP_VERSION', '1.0.0');
+define('APP_NAME',    'POS');
+define('APP_VERSION', '3.2.1');
 define('BASE_URL',    'http://localhost/code/v3');   // Change for production
 define('BASE_PATH',   __DIR__);
 

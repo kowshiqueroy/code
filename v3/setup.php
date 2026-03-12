@@ -39,15 +39,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
+          CREATE TABLE IF NOT EXISTS brands (
+            id          INT AUTO_INCREMENT PRIMARY KEY,
+            name        VARCHAR(100) NOT NULL UNIQUE,
+            created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        
+
         CREATE TABLE IF NOT EXISTS products (
             id          INT AUTO_INCREMENT PRIMARY KEY,
             product_id  VARCHAR(20)  NOT NULL UNIQUE,
             category_id INT,
+            brand_id    INT,
             name        VARCHAR(200) NOT NULL,
             description TEXT,
             active      TINYINT(1) NOT NULL DEFAULT 1,
             created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
+            FOREIGN KEY (brand_id) REFERENCES brands(id) ON DELETE SET NULL
         );
 
         CREATE TABLE IF NOT EXISTS product_variants (

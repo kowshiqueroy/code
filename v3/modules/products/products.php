@@ -158,7 +158,7 @@ require_once BASE_PATH . '/includes/header.php';
         <?php foreach ($products as $p): ?>
         <tr>
           <td>
-            <div class="barcode-text" style="font-size:1.2rem"><?= e($p['product_id']) ?></div>
+            <!-- <div class="barcode-text" style="font-size:1.2rem"><?= e($p['product_id']) ?></div> -->
             <div class="barcode-id"><?= e($p['product_id']) ?></div>
           </td>
           <td><strong><?= e($p['name']) ?></strong></td>
@@ -192,19 +192,30 @@ require_once BASE_PATH . '/includes/header.php';
         <input type="hidden" name="action" value="save_product">
         <input type="hidden" name="product_id_db" value="<?= $editing['id'] ?? '' ?>">
 
-        <div class="form-row cols-2">
+        <div class="form-row cols-1">
           <div class="form-group">
             <label class="form-label">Product Name *</label>
             <input type="text" name="name" class="form-control" required value="<?= e($editing['name'] ?? '') ?>">
           </div>
+           <div class="form-row cols-2">  
+          <div class="form-group">
+            <label class="form-label">Brand</label>
+            <select name="brand_id" class="form-control">
+              <!-- <option value="">— None —</option> -->
+              <?php foreach ($brands as $b): ?>
+                <option value="<?= $b['id'] ?>" <?= ($editing['brand_id'] ?? '') == $b['id'] ? 'selected' : '' ?>><?= e($b['name']) ?></option>
+              <?php endforeach ?>
+            </select>
+          </div>
           <div class="form-group">
             <label class="form-label">Category</label>
             <select name="category_id" class="form-control">
-              <option value="">— None —</option>
+              <!-- <option value="">— None —</option> -->
               <?php foreach ($categories as $c): ?>
                 <option value="<?= $c['id'] ?>" <?= ($editing['category_id'] ?? '') == $c['id'] ? 'selected' : '' ?>><?= e($c['name']) ?></option>
               <?php endforeach ?>
             </select>
+          </div>
           </div>
         </div>
 
@@ -344,6 +355,12 @@ function generateBulk() {
     container.insertAdjacentHTML('beforeend', variantRowHtml(s, c, cost, price, qty));
   }));
   document.getElementById('bulkAddPanel').style.display = 'none';
+  //remove empty rows
+  document.querySelectorAll('.variant-row').forEach(row => {
+    const size = row.querySelector('input[name="variant_size[]"]').value.trim();
+    const color = row.querySelector('input[name="variant_color[]"]').value.trim();
+    if (!size && !color) row.remove();
+  });
 }
 function esc(s) { return String(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 </script>

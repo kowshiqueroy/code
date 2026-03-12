@@ -1,20 +1,34 @@
 // ============================================================
 // assets/js/app.js — Core UI interactions
 // ============================================================
-
-// ── Nav toggle ────────────────────────────────────────────────
 const navToggle  = document.getElementById('navToggle');
 const sideNav    = document.getElementById('sideNav');
 const navOverlay = document.getElementById('navOverlay');
 
-function openNav()  { sideNav?.classList.add('open'); navOverlay?.classList.add('open'); }
-function closeNav() { sideNav?.classList.remove('open'); navOverlay?.classList.remove('open'); }
+// Function to open/close
+function toggleMenu() {
+  sideNav.classList.toggle('open');
+  navOverlay.classList.toggle('open');
+}
 
-navToggle?.addEventListener('click', openNav);
-navOverlay?.addEventListener('click', closeNav);
+// Function to force close
+function closeMenu() {
+  sideNav.classList.remove('open');
+  navOverlay.classList.remove('open');
+}
 
-// Close nav on link click (mobile)
-document.querySelectorAll('.nav-link').forEach(l => l.addEventListener('click', closeNav));
+// Event Listeners
+navToggle?.addEventListener('click', (e) => {
+  e.preventDefault();
+  toggleMenu();
+});
+
+navOverlay?.addEventListener('click', closeMenu);
+
+// Close if a link is clicked
+document.querySelectorAll('.nav-link').forEach(link => {
+  link.addEventListener('click', closeMenu);
+});
 
 // ── Modal helpers ─────────────────────────────────────────────
 function openModal(id)  { document.getElementById(id)?.classList.add('open'); }

@@ -377,10 +377,9 @@ body, html {
 }
 </style>
 
-<div class="d-flex justify-between align-center mb-2" style="color:#fff;">
+<!-- <div class="d-flex justify-between align-center mb-2" style="color:#fff;">
   <h1 style="color:#fff; margin:0; font-size: 1.5rem;">🛒 POS</h1>
-  <button class="btn btn-outline btn-sm" style="border-color:#555; color:#ddd; background:green;" onclick="toggleFullscreen()" id="fsBtn">⛶ Fullscreen</button>
-</div>
+</div> -->
 
 <div class="pos-wrapper" id="posContainer">
 
@@ -686,17 +685,17 @@ const Cart = {
 // ============================================================================
 
 // Toggle Fullscreen explicitly targeting ONLY the POS Container
-function toggleFullscreen() {
-  const container = document.getElementById('posContainer');
-  const btn = document.getElementById('fsBtn');
-  if (!document.fullscreenElement) {
-    container.requestFullscreen().catch(err => { alert(`Error: ${err.message}`); });
-    btn.innerHTML = '🗗 Fullscreen';
-  } else {
-    document.exitFullscreen();
-    btn.innerHTML = '⛶ Fullscreen';
-  }
-}
+// function toggleFullscreen() {
+//   const container = document.getElementById('posContainer');
+//   const btn = document.getElementById('fsBtn');
+//   if (!document.fullscreenElement) {
+//     container.requestFullscreen().catch(err => { alert(`Error: ${err.message}`); });
+//     btn.innerHTML = '🗗 Fullscreen';
+//   } else {
+//     document.exitFullscreen();
+//     btn.innerHTML = '⛶ Fullscreen';
+//   }
+// }
 
 // Fetch Customer by Phone
 function lookupCustomer(phone) {
@@ -927,6 +926,37 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Initial render
   Cart.render();
+
+const navToggle  = document.getElementById('navToggle');
+const sideNav    = document.getElementById('sideNav');
+const navOverlay = document.getElementById('navOverlay');
+
+// Function to open/close
+function toggleMenu() {
+  sideNav.classList.toggle('open');
+  navOverlay.classList.toggle('open');
+}
+
+// Function to force close
+function closeMenu() {
+  sideNav.classList.remove('open');
+  navOverlay.classList.remove('open');
+}
+
+// Event Listeners
+navToggle?.addEventListener('click', (e) => {
+  e.preventDefault();
+  toggleMenu();
+});
+
+navOverlay?.addEventListener('click', closeMenu);
+
+// Close if a link is clicked
+document.querySelectorAll('.nav-link').forEach(link => {
+  link.addEventListener('click', closeMenu);
+});
+
+
 });
 
 //update product grid based on search and category filter

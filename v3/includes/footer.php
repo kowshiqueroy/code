@@ -18,7 +18,7 @@
 
 <!-- ── Footer ──────────────────────────────────────────────── -->
 <footer class="app-footer no-print">
-  <?= APP_NAME ?> v<?= APP_VERSION ?> &nbsp;·&nbsp; <?= date('Y') ?>
+  <?= APP_NAME ?> v<?= APP_VERSION ?> &nbsp;·&nbsp; <?= date('Y') ?> Developed by kowshiqueroy@gmail.com
 </footer>
 
 <script src="<?= BASE_URL ?>/assets/js/app.js"></script>

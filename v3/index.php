@@ -29,6 +29,7 @@ $routes = [
     'pos'            => 'modules/pos/pos.php',
     'products'       => 'modules/products/products.php',
     'categories'     => 'modules/categories/categories.php',
+    'brands'         => 'modules/brands/brands.php',
     'customers'      => 'modules/customers/customers.php',
     'sales'          => 'modules/sales/sales.php',
     'invoice'        => 'modules/invoices/invoice.php',

@@ -37,10 +37,10 @@ function navLink(string $page, string $icon, string $label, string $curPage): st
   </div>
   <div class="header-actions">
     <span class="user-badge">
-      <?= e($user['full_name']) ?>
-      <span class="role-pill <?= e($user['role']) ?>"><?= e($user['role']) ?></span>
+      
+      <a href="index.php?page=pos" class="role-pill" style="color:white">P O S</a>
     </span>
-    <a href="index.php?action=logout" class="btn btn-ghost btn-sm">Logout</a>
+    <a href="index.php?action=logout" class="btn btn-danger btn-sm">Logout</a>
   </div>
 </header>
 
@@ -60,6 +60,7 @@ function navLink(string $page, string $icon, string $label, string $curPage): st
     <div class="nav-section-label">Inventory</div>
     <?= navLink('products',   '📦', 'Products', $curPage) ?>
     <?= navLink('categories', '🏷️', 'Categories', $curPage) ?>
+    <?= navLink('brands',     '🏷️', 'Brands', $curPage) ?>
     <?= navLink('customers',  '👤', 'Customers', $curPage) ?>
   </div>
 
@@ -83,6 +84,15 @@ function navLink(string $page, string $icon, string $label, string $curPage): st
     <div class="nav-section-label">Tools</div>
     <?= navLink('barcodes', '🏷️', 'Print Labels', $curPage) ?>
     <a href="offline.php" class="nav-link"><span class="icon">📵</span>Offline POS</a>
+  </div>
+    
+
+   <div class="nav-section" style="display:flex;justify-content:center;align-items:center">
+    <div class="nav-section-label">   <?= e($user['full_name']) ?></div>
+<span class="user-badge" style="display:flex;justify-content:center;align-items:center">
+   
+      <span class="role-pill <?= e($user['role']) ?>"><?= e($user['role']) ?></span>
+    </span>
   </div>
 
 </nav>
