@@ -49,12 +49,12 @@ if ($action === 'save_entry' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
     if ($id) {
         dbUpdate('finance_entries', $data, 'id = ?', [$id]);
-        logAction('UPDATE','finance',$id,'Updated finance entry');
+        logAction('UPDATE','finance',$id,'Updated finance entry: ' . json_encode($data));
         flash('success','Entry updated.');
     } else {
         $data['created_at'] = now();
         $newId = dbInsert('finance_entries', $data);
-        logAction('CREATE','finance',$newId,'Added finance entry: '.$type);
+        logAction('CREATE','finance',$newId,'Added finance entry: ' . json_encode($data));
         flash('success','Entry added.');
     }
     redirect('finance');

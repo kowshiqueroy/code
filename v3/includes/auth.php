@@ -17,14 +17,14 @@ function login(string $username, string $password): bool {
         $_SESSION['username']  = $user['username'];
         $_SESSION['role']      = $user['role'];
         $_SESSION['full_name'] = $user['full_name'];
-        logAction('LOGIN', 'auth', null, 'User logged in');
+        logAction('LOGIN', 'auth', null, "User logged in as {$_SESSION['full_name']} (ID: {$_SESSION['user_id']}, Role: {$_SESSION['role']})");
         return true;
     }
     return false;
 }
 
 function logout(): void {
-    logAction('LOGOUT', 'auth', null, 'User logged out');
+    logAction('LOGOUT', 'auth', null, "User logged out as {$_SESSION['full_name']} (ID: {$_SESSION['user_id']}, Role: {$_SESSION['role']})");
     session_destroy();
     header('Location: ' . BASE_URL . '/index.php');
     exit;

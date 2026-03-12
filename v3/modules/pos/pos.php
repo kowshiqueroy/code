@@ -44,7 +44,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'final
     $customerPhone = trim($_POST['customer_phone'] ?? '');
     $customerName  = trim($_POST['customer_name'] ?? '');
   
-
     // Auto-create new customer if phone is provided but no ID matches
     if (!$customerId && $customerPhone) {
         $existing = dbFetch("SELECT id FROM customers WHERE phone = ?", [$customerPhone]);
@@ -166,8 +165,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'final
 // ── Load page data ────────────────────────────────────────────
 $S          = getAllSettings();
 $categories = dbFetchAll('SELECT * FROM categories ORDER BY name');
+// Make sure to query brands here
+$brands     = dbFetchAll('SELECT * FROM brands ORDER BY name');
+
 $products   = dbFetchAll(
-    "SELECT p.id, p.product_id, p.name, p.category_id,
+    "SELECT p.id, p.product_id, p.name, p.category_id, p.brand_id,
             MIN(v.price) AS min_price, SUM(v.quantity) AS total_stock
      FROM products p LEFT JOIN product_variants v ON v.product_id = p.id
      WHERE p.active = 1 GROUP BY p.id ORDER BY p.name"
@@ -185,282 +187,445 @@ require_once BASE_PATH . '/includes/header.php';
 ?>
 
 <style>
-/* ── Modern Dark Theme POS Layout ── */
+/* ── Modern POS 3-Column Theme ── */
 :root {
   --pos-bg: #121212;
   --pos-panel: #1e1e1e;
+  --pos-panel-alt: #252525;
   --pos-border: #333333;
   --pos-text: #e0e0e0;
   --pos-text-muted: #888888;
   --pos-accent: #6c5ce7;
+  --pos-accent-hover: #5a4bcf;
   --pos-danger: #ff4757;
   --pos-success: #2ed573;
+  --pos-radius: 10px;
 }
 
 body, html {
   background-color: var(--pos-bg) !important;
   color: var(--pos-text) !important;
-/*   overflow: hidden; Lock body scrolling entirely */
+  /* Assuming your top nav is ~70px, we lock screen scrolling on desktop */
 }
 
 /* Custom Scrollbars */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #555; }
+::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #666; }
 
-/* Input overrides for dark mode */
-.form-control {
+/* ── Container Layout (3 Columns) ── */
+.pos-wrapper {
+  display: flex;
+  gap: 15px;
+  /* Height lock for desktop to ensure columns scroll independently */
+  height: calc(100vh - 90px); 
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+/* Base Column Style */
+.pos-col {
+  background: var(--pos-panel);
+  border-radius: var(--pos-radius);
+  border: 1px solid var(--pos-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Column 1: Products (Largest) */
+.col-products { flex: 2.2; min-width: 0; }
+
+/* ── Column 1: Filters Base ── */
+/* ── Mobile Filters Grid Override ── */
+  .pos-filters {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important; /* Two equal columns */
+    gap: 8px !important;
+  }
+
+  /* Nuke the inline flex and min-width styles on mobile */
+  .pos-filters .pos-input {
+    flex: none !important; 
+    min-width: 0 !important; 
+    width: 100% !important; 
+  }
+
+  /* Make Search bar span the entire top row */
+  .pos-filters #productSearch {
+    grid-column: 1 / -1 !important; 
+  }
+
+  /* Make Barcode input span the entire bottom row for easy tapping */
+  .pos-filters #barcodeInput {
+    grid-column: 1 / -1 !important; 
+  }
+/* ── Force Dark Theme on Filters (Override Template Defaults) ── */
+.pos-filters {
+  background-color: #1a1a1a !important;
+  border-bottom: 1px solid var(--pos-border) !important;
+  padding: 10px;
+}
+
+/* Hyper-specific targeting to beat Bootstrap/external CSS */
+.pos-filters input[type="text"],
+.pos-filters select,
+.pos-filters .pos-input {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+  border: 1px solid var(--pos-border) !important;
+  border-radius: 6px !important;
+  /* Reset any browser/template shadows or appearances */
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important; 
+    padding: 10px;
+}
+
+/* Fix the placeholder text so it's visible on the dark background */
+.pos-filters input::placeholder {
+  color: #aaaaaa !important;
+  opacity: 1 !important;
+}
+
+/* Force the dropdown options themselves to be dark */
+.pos-filters select option {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+}
+
+/* Focus states */
+.pos-filters input:focus,
+.pos-filters select:focus {
+  border-color: var(--pos-accent) !important;
+  box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.2) !important;
+  outline: none !important;
+}
+
+/* Column 2: Cart (Medium) */
+.col-cart { flex: 1.3; min-width: 0; }
+/* ── Column 3: Checkout Container ── */
+/* ── Ultra-Compact Checkout Redesign ── */
+.col-checkout { 
+  flex: 1.2; 
+  min-width: 310px; 
+  display: grid !important; 
+  grid-template-rows: auto 1fr auto !important; /* Header, Scrollable Body, Fixed Footer */
+  height: 100% !important;
+  overflow: hidden !important;
+  background: var(--pos-panel);
+  border-radius: var(--pos-radius);
+  border: 1px solid var(--pos-border);
+}
+
+/* Tighter inputs for checkout */
+.pos-input-sm {
   background-color: #2a2a2a !important;
   color: #fff !important;
   border: 1px solid var(--pos-border) !important;
+  border-radius: 4px;
+  padding: 4px 8px;
+  width: 100%;
+  font-size: 0.8rem;
+  height: 28px;
 }
-.form-control:focus {
-  border-color: var(--pos-accent) !important;
-  box-shadow: none !important;
-}
+.pos-input-sm:focus { border-color: var(--pos-accent) !important; outline: none; }
 
-/* ── Container Layout ── */
-.pos-wrapper {
-  display: flex;
-  /* Subtract approximate header height and margins. Using vh to force absolute fit 
-  height: calc(100vh - 90px); */
-  gap: 15px;
-  margin-top: 10px;
-}
+/* Tighter Checkout Sections */
+.checkout-section { padding: 8px 10px; border-bottom: 1px solid var(--pos-border); }
+.checkout-section:last-child { border-bottom: none; }
+.checkout-body { overflow-y: auto !important; min-height: 0 !important; }
+.checkout-footer { padding: 10px; background: #1a1a1a; border-top: 1px solid var(--pos-border); }
 
-/* Container Fullscreen mode styling */
-.pos-wrapper:fullscreen {
-  height: 100%;
-  width: 100vw;
-  padding: 10px;
-  margin: 0;
-  background-color: var(--pos-bg);
-}
+/* Compact Labels & Summary */
+.compact-label { display: block; font-size: 0.65rem; color: var(--pos-text-muted); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+.summary-row { display: flex; justify-content: space-between; margin-bottom: 3px; font-size: 0.8rem; color: #ccc; }
+.summary-total-compact { display: flex; justify-content: space-between; font-size: 1.15rem; font-weight: bold; color: #fff; margin-bottom: 8px; }
 
-/* Left - Product Grid */
-.pos-left {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: var(--pos-panel);
-  border-radius: 8px;
-  border: 1px solid var(--pos-border);
-  min-height: 0; /* CRITICAL for Flexbox internal scrolling */
-}
-.pos-search-bar {
-  padding: 12px;
-  border-bottom: 1px solid var(--pos-border);
-  display: flex;
-  gap: 10px;
-  background: #1a1a1a;
-  flex-shrink: 0;
-}
+/* Tighter input groups */
+.input-group-tight { display: flex; align-items: stretch; height: 28px; }
+.input-group-tight .pos-input-sm:first-child { border-radius: 4px 0 0 4px; border-right: none; width: 40px; text-align: center; padding: 4px 0; }
+.input-group-tight .pos-input-sm:last-child { border-radius: 0 4px 4px 0; flex: 1; }
+
+/* Tighter Payment Buttons */
+.pay-opt-wrap { padding: 4px; border-radius: 4px; font-size: 0.75rem; flex: 1; text-align: center; border: 1px solid var(--pos-border); cursor: pointer; background: var(--pos-panel-alt); color: var(--pos-text); transition: 0.2s; }
+.pay-opt-wrap.pay-selected { background: rgba(108, 92, 231, 0.15); border-color: var(--pos-accent); color: #fff; }
+.btn-action-sm { width: 100%; padding: 6px; border: none; border-radius: 4px; font-weight: bold; font-size: 0.85rem; cursor: pointer; color: #fff; height: 32px; }
+
+
 .product-grid {
   flex: 1;
-  overflow-y: auto; /* Scrollable grid */
+  overflow-y: auto;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 10px;
-  padding: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+  gap: 12px;
+  padding: 15px;
   align-content: start;
 }
 .product-tile {
-  background: #252525;
+  background: var(--pos-panel-alt);
   border: 1px solid var(--pos-border);
-  border-radius: 6px;
-  padding: 10px;
+  border-radius: var(--pos-radius);
+  padding: 12px;
   cursor: pointer;
   text-align: center;
   user-select: none;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 110px;
 }
-.product-tile:active { transform: scale(0.98); border-color: var(--pos-accent); }
-.product-tile.out-of-stock { opacity: 0.4; cursor: not-allowed; }
-.tile-name { font-weight: 600; font-size: 0.85rem; margin-bottom: 5px; color: #fff; line-height: 1.2;}
-.tile-price { color: var(--pos-success); font-weight: bold; font-size: 0.9rem;}
-.tile-stock { font-size: 0.7rem; color: var(--pos-text-muted); margin-top: 4px; }
-/* ── Variant Selection Modal ── */
+.product-tile:hover {
+  border-color: var(--pos-accent);
+  background: #2c2c2c;
+  transform: translateY(-2px);
+}
+.product-tile:active { transform: scale(0.96); }
+.product-tile.out-of-stock { opacity: 0.4; cursor: not-allowed; filter: grayscale(1); }
+.tile-name { font-weight: 600; font-size: 0.88rem; margin-bottom: 6px; color: #fff; line-height: 1.3;}
+.tile-meta { display: flex; justify-content: space-between; align-items: center; margin-top: auto;}
+.tile-price { color: var(--pos-success); font-weight: bold; font-size: 0.95rem;}
+.tile-stock { font-size: 0.7rem; color: var(--pos-text-muted); background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; }
+
+/* ── Column 2: Cart ── */
+.cart-items {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+.cart-item-row {
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+  padding: 10px; 
+  border-bottom: 1px solid var(--pos-border); 
+  font-size: 0.85rem;
+  background: var(--pos-panel-alt);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.cart-item-info { flex: 1; padding-right: 10px; }
+.cart-item-title { font-weight: 600; color: #fff; display: block; margin-bottom: 4px; }
+.cart-item-meta { font-size: 0.75rem; color: var(--pos-text-muted); }
+.cart-item-controls { display: flex; align-items: center; gap: 8px; }
+.qty-input {
+  width: 45px; text-align: center; padding: 4px; 
+  background: #333; border: 1px solid #555; 
+  color: #fff; border-radius: 4px; font-weight: bold;
+}
+.cart-item-price { color: var(--pos-success); font-weight: bold; width: 60px; text-align: right; }
+.btn-remove {
+  background: rgba(255, 71, 87, 0.1); color: var(--pos-danger);
+  border: none; border-radius: 4px; width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: 0.2s;
+}
+.btn-remove:hover { background: var(--pos-danger); color: #fff; }
+
+/* ── Column 3: Checkout ── */
+.checkout-section { padding: 15px; border-bottom: 1px solid var(--pos-border); }
+.checkout-section:last-child { border-bottom: none; }
+.form-group { margin-bottom: 10px; }
+.form-group label { display: block; font-size: 0.75rem; color: var(--pos-text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;}
+
+.summary-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.9rem; color: #ccc; }
+.summary-total { 
+  display: flex; justify-content: space-between; 
+  font-size: 1.4rem; font-weight: bold; 
+  margin-top: 10px; padding-top: 10px; 
+  border-top: 1px dashed var(--pos-border); 
+  color: #fff; 
+}
+
+.pay-opt-wrap {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 8px; border-radius: 6px; border: 1px solid var(--pos-border);
+  cursor: pointer; font-size: 0.85rem; flex: 1; text-align: center;
+  background: var(--pos-panel-alt); color: var(--pos-text);
+  transition: 0.2s;
+}
+.pay-opt-wrap.pay-selected {
+  background: rgba(108, 92, 231, 0.15); 
+  border-color: var(--pos-accent); 
+  color: #fff;
+}
+.btn-action {
+  width: 100%; padding: 12px; border: none; border-radius: 6px;
+  font-weight: bold; font-size: 0.95rem; cursor: pointer; color: #fff;
+}
+
+/* ── Variant Modal ── */
 .pos-modal-overlay {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 9999;
-  opacity: 0; visibility: hidden; transition: 0.2s;
+  background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center;
+  z-index: 9999; opacity: 0; visibility: hidden; transition: 0.2s;
 }
-.pos-modal-overlay.active {
-  opacity: 1; visibility: visible;
-}
+.pos-modal-overlay.active { opacity: 1; visibility: visible; }
 .pos-modal {
-  background: var(--pos-panel);
-  border: 1px solid var(--pos-border);
-  border-radius: 8px;
-  width: 90%; max-width: 400px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-  display: flex; flex-direction: column;
+  background: var(--pos-panel); border: 1px solid var(--pos-border); border-radius: var(--pos-radius);
+  width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; flex-direction: column;
 }
-.pos-modal-header {
-  padding: 15px; border-bottom: 1px solid var(--pos-border);
-  display: flex; justify-content: space-between; align-items: center;
-}
+.pos-modal-header { padding: 15px; border-bottom: 1px solid var(--pos-border); display: flex; justify-content: space-between; align-items: center; }
 .pos-modal-title { font-size: 1.1rem; font-weight: bold; color: #fff; margin: 0; }
-.pos-modal-close {
-  background: transparent; border: none; color: var(--pos-text-muted);
-  font-size: 1.5rem; cursor: pointer; line-height: 1;
-}
-.pos-modal-close:hover { color: var(--pos-danger); }
-.pos-modal-body {
-  padding: 15px; max-height: 60vh; overflow-y: auto;
-  display: flex; flex-direction: column; gap: 8px;
-}
+.pos-modal-close { background: transparent; border: none; color: var(--pos-text-muted); font-size: 1.5rem; cursor: pointer; line-height: 1; }
+.pos-modal-body { padding: 15px; max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
 .variant-btn {
-  background: #252525; border: 1px solid var(--pos-border);
-  border-radius: 6px; padding: 12px; color: var(--pos-text);
-  display: flex; justify-content: space-between; align-items: center;
+  background: var(--pos-panel-alt); border: 1px solid var(--pos-border); border-radius: 6px;
+  padding: 12px; color: var(--pos-text); display: flex; justify-content: space-between; align-items: center;
   cursor: pointer; text-align: left; transition: 0.1s;
 }
 .variant-btn:hover { border-color: var(--pos-accent); background: #2a2a2a; }
-.variant-btn-info { display: flex; flex-direction: column; }
 .variant-btn-price { color: var(--pos-success); font-weight: bold; }
-/* Right - Cart Panel */
-.cart-panel {
-  width: 360px;
-  display: flex;
-  flex-direction: column;
-  background: var(--pos-panel);
-  border-radius: 8px;
-  border: 1px solid var(--pos-border);
-  min-height: 0; /* CRITICAL for Flexbox internal scrolling */
-}
-.cart-header {
-  padding: 12px; 
-  background: var(--pos-accent); 
-  color: #fff; 
-  font-weight: bold;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0;
-}
-.cart-items {
-  flex: 1;
-  overflow-y: auto; /* Scrollable cart list */
-  border-bottom: 1px solid var(--pos-border);
-  padding: 5px;
-}
-/* Individual Cart Row */
-.cart-item-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 8px; border-bottom: 1px solid var(--pos-border); font-size: 0.85rem;
-}
-.cart-item-row .qty-input {
-  width: 45px; text-align: center; padding: 2px; background: #333; border: 1px solid #555; color: #fff; border-radius: 4px;
-}
-
-.cart-footer {
-  background: #1a1a1a;
-  flex-shrink: 0; /* Ensures footer NEVER gets squished or hidden */
-}
-
-/* Pay Options Dark Theme */
-.pay-opt-wrap {
-  background: #252525; border-color: var(--pos-border) !important; color: var(--pos-text);
-}
-.pay-opt-wrap.pay-selected {
-  background: rgba(108, 92, 231, 0.2); border-color: var(--pos-accent) !important; color: #fff;
-}
-
-@media (max-width: 900px) {
-  body, html { overflow: auto; }
-  .pos-wrapper { flex-direction: column; height: auto; }
-  .pos-left { min-height: 40vh; flex: none; }
-  .cart-panel { width: 100%; min-height: 60vh; flex: none; }
+/* ── Mobile View Overrides ── */
+@media (max-width: 992px) {
+  /* Restore normal page scrolling */
+  body, html { 
+    overflow: auto !important; 
+    height: auto !important; 
+  }
+  
+  /* Release the strict desktop wrapper height */
+  .pos-wrapper { 
+    flex-direction: column; 
+    height: auto !important; 
+    max-height: none !important; 
+    overflow: visible !important; 
+    margin-bottom: 40px !important; 
+  }
+  
+  /* Make all columns stack and adapt to their content */
+  .pos-col { 
+    flex: none !important; 
+    width: 100% !important; 
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  /* Give the product grid a reasonable mobile height so they can scroll within it */
+  .product-grid { 
+    max-height: 50vh; 
+    overflow-y: auto !important;
+  }
+  
+  /* Give the cart a fixed scrollable height so it doesn't push checkout too far down */
+  .cart-items { 
+    max-height: 40vh; 
+    overflow-y: auto !important; 
+  }
+  
+  /* Kill the CSS Grid on the checkout column for mobile so it stacks naturally */
+  .col-checkout { 
+    display: flex !important; 
+    flex-direction: column !important;
+  }
+  
+  /* Let the checkout body expand to fit all elements without internal scrolling */
+  .checkout-body { 
+    overflow-y: visible !important; 
+    min-height: auto !important; 
+  }
 }
 </style>
 
-<!-- <div class="d-flex justify-between align-center mb-2" style="color:#fff;">
-  <h1 style="color:#fff; margin:0; font-size: 1.5rem;">🛒 POS</h1>
-</div> -->
 
 <div class="pos-wrapper" id="posContainer">
 
-  <div class="pos-left">
-    <div class="pos-search-bar">
-      <input type="text" id="productSearch" class="form-control form-control-sm" placeholder="Search products…" style="flex:1;">
-      <select id="categoryFilter" class="form-control form-control-sm" style="max-width:130px">
+  <div class="pos-col col-products">
+    <div class="pos-filters">
+      <input type="text" id="productSearch" class="pos-input" placeholder="🔍 Search products..." >
+      
+      <select id="categoryFilter" class="pos-input" >
         <option value="">All Categories</option>
         <?php foreach ($categories as $c): ?>
           <option value="<?= $c['id'] ?>"><?= e($c['name']) ?></option>
         <?php endforeach ?>
       </select>
-      <input type="text" id="barcodeInput" class="form-control form-control-sm" placeholder="Scan Barcode…" style="max-width:130px"
+
+      <select id="brandFilter" class="pos-input" >
+        <option value="">All Brands</option>
+        <?php foreach ($brands as $b): ?>
+          <option value="<?= $b['id'] ?>"><?= e($b['name']) ?></option>
+        <?php endforeach ?>
+      </select>
+
+      <input type="text" id="barcodeInput" class="pos-input" placeholder="||| Barcode" 
              onkeydown="if(event.key==='Enter'){searchByBarcode(this.value);this.value=''}">
     </div>
     
     <div class="product-grid" id="productGrid">
       <?php foreach ($products as $p): ?>
       <div class="product-tile <?= $p['total_stock'] <= 0 ? 'out-of-stock' : '' ?>"
-           data-name="<?= e(strtolower($p['name'])) ?>" data-category="<?= $p['category_id'] ?>"
+           data-name="<?= e(strtolower($p['name'])) ?>" 
+           data-category="<?= $p['category_id'] ?>"
+           data-brand="<?= $p['brand_id'] ?>"
            onclick="<?= $p['total_stock'] > 0 ? "fetchVariantsAndAdd({$p['id']})" : '' ?>">
         <div class="tile-name"><?= e($p['name']) ?></div>
-        <div class="tile-price"><?= $cur . number_format((float)$p['min_price'],2) ?></div>
-        <div class="tile-stock">Stock: <?= (int)$p['total_stock'] ?></div>
+        <div class="tile-meta">
+          <span class="tile-price"><?= $cur . number_format((float)$p['min_price'], 2) ?></span>
+          <span class="tile-stock"><?= (int)$p['total_stock'] ?> Left</span>
+        </div>
       </div>
       <?php endforeach ?>
     </div>
   </div>
 
-  <div class="cart-panel">
-    <div class="cart-header">
-      <span>🛒 Current Cart</span>
-      <span id="cartCount" class="badge" style="background:#fff;color:var(--pos-accent);font-size:0.8rem;padding:2px 6px;">0</span>
+  <div class="pos-col col-cart">
+    <div class="pos-header">
+      <span style="color: var(--pos-accent);">🛒 Shopping Cart</span>
+      <span id="cartCount" style="background: var(--pos-accent); color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">0</span>
     </div>
     
     <div class="cart-items" id="cartItemsContainer">
-      <p class="text-center" style="padding:24px; color:var(--pos-text-muted);">Cart is empty</p>
+      <div style="height: 100%; display: flex; align-items: center; justify-content: center; color: var(--pos-text-muted);">
+        Scan a barcode or select a product
+      </div>
     </div>
+  </div>
 
-    <div class="cart-footer">
-      <div style="padding:8px 12px; border-bottom:1px solid var(--pos-border)">
-        <div class="form-row cols-2" style="margin-bottom:4px">
-          <div class="form-group" style="margin-bottom:0">
-            <input type="text" id="customerPhone" class="form-control form-control-sm" placeholder="Phone (New/Exsiting)" onblur="lookupCustomer(this.value)">
-          </div>
-          <div class="form-group" style="margin-bottom:0">
-            <input type="text" id="customerName" class="form-control form-control-sm" placeholder="Name…">
-          </div>
+  <div class="pos-col col-checkout">
+    <div class="pos-header" style="padding: 8px 10px;"><span>📄 Checkout</span></div>
+
+    <div class="checkout-body">
+      <div class="checkout-section">
+        <label class="compact-label">Customer Details</label>
+        <div style="display:flex; gap:6px; margin-bottom: 6px;">
+          <input type="text" id="customerPhone" class="pos-input-sm" placeholder="Phone..." onblur="lookupCustomer(this.value)" style="flex:1">
+          <input type="text" id="customerName" class="pos-input-sm" placeholder="Name..." style="flex:1.5">
         </div>
         <input type="hidden" id="customerId">
-        
+
         <?php if ($pointsEnabled): ?>
-        <div id="pointsSection" style="margin-top:4px; background:#2c2c36; padding:6px; border-radius:4px; font-size:0.8rem;">
-          <div style="display:flex;justify-content:space-between;">
-            <span style="color:#ffd700;">⭐ Pts: <strong id="pointsBadge">0</strong></span>
-            <label style="cursor:pointer; color:#ccc;">
+        <div style="display:flex; justify-content: space-between; align-items: center; background: rgba(255, 215, 0, 0.05); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255, 215, 0, 0.1);">
+          <span style="color:#ffd700; font-size: 0.75rem;">⭐ <strong id="pointsBadge">0</strong></span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <label style="cursor:pointer; font-size: 0.7rem; color: #ccc; display:flex; align-items:center; gap:2px; margin:0;">
               <input type="checkbox" id="usePointsToggle" onchange="togglePoints(this.checked)"> Redeem
             </label>
-          </div>
-          <div id="pointsInputRow" class="hidden" style="margin-top:4px;">
-            <input type="number" id="pointsUsed" class="form-control form-control-sm" placeholder="Points to use" min="0" oninput="liveValidatePoints()">
+            <input type="number" id="pointsUsed" class="pos-input-sm" placeholder="Pts" min="0" oninput="liveValidatePoints()" style="width: 50px; display:none; text-align:center;">
           </div>
         </div>
         <?php endif ?>
       </div>
 
       <?php if ($discEnabled || $vatEnabled): ?>
-      <div style="padding:8px 12px; border-bottom:1px solid var(--pos-border)">
-        <div class="form-row cols-2">
+      <div class="checkout-section">
+        <div style="display:flex; gap:8px;">
           <?php if ($discEnabled): ?>
-          <div class="form-group" style="margin-bottom:0">
-            <div style="display:flex;gap:4px">
-              <span style="font-size:0.75rem; color:#aaa; line-height: 2;">Disc</span>
+          <div style="flex:1; margin:0;">
+            <label class="compact-label">Discount</label>
+            <div class="input-group-tight">
               <?php if ($discType === 'both'): ?>
-              <select id="discountType" class="form-control form-control-sm" style="max-width:45px;padding:2px;" onchange="liveValidateDiscount()">
+              <select id="discountType" class="pos-input-sm" onchange="liveValidateDiscount()">
                 <option value="percent">%</option><option value="amount"><?= $cur ?></option>
               </select>
               <?php else: ?>
               <input type="hidden" id="discountType" value="<?= e($discType) ?>">
+              <span class="pos-input-sm" style="background:#222; width:30px; text-align:center; border-right:none; border-radius: 4px 0 0 4px; color:#aaa;"><?= $discType==='percent'?'%':$cur ?></span>
               <?php endif ?>
-              <input type="number" id="discountPct" class="form-control form-control-sm" value="<?= $discDefault ?>" min="0" step="0.01" oninput="liveValidateDiscount()">
+              <input type="number" id="discountPct" class="pos-input-sm" value="<?= $discDefault ?>" min="0" step="0.01" oninput="liveValidateDiscount()">
             </div>
           </div>
           <?php else: ?>
@@ -468,13 +633,13 @@ body, html {
           <?php endif ?>
 
           <?php if ($vatEnabled): ?>
-          <div class="form-group" style="margin-bottom:0">
-            <div style="display:flex;gap:4px">
-              <span style="font-size:0.75rem; color:#aaa; line-height: 2;">VAT</span>
-              <select id="vatType" class="form-control form-control-sm" style="max-width:45px;padding:2px;" onchange="liveValidateVAT()">
+          <div style="flex:1; margin:0;">
+            <label class="compact-label">VAT</label>
+            <div class="input-group-tight">
+              <select id="vatType" class="pos-input-sm" onchange="liveValidateVAT()">
                 <option value="percent">%</option><option value="amount"><?= $cur ?></option>
               </select>
-              <input type="number" id="vatRate" class="form-control form-control-sm" value="<?= $vatDefault ?>" min="0" step="0.01" oninput="liveValidateVAT()">
+              <input type="number" id="vatRate" class="pos-input-sm" value="<?= $vatDefault ?>" min="0" step="0.01" oninput="liveValidateVAT()">
             </div>
           </div>
           <?php else: ?>
@@ -484,31 +649,34 @@ body, html {
       </div>
       <?php endif ?>
 
-      <div style="padding:8px 12px; font-size:0.85rem;">
-        <div style="display:flex;justify-content:space-between;color:#ccc;"><span>Subtotal</span><span id="summarySubtotal"><?= $cur ?>0.00</span></div>
-        <?php if ($discEnabled): ?><div style="display:flex;justify-content:space-between;color:var(--pos-danger);"><span>Discount</span><span id="summaryDiscount">-<?= $cur ?>0.00</span></div><?php endif ?>
-        <?php if ($pointsEnabled): ?><div style="display:flex;justify-content:space-between;color:#ffd700;"><span>Points Val</span><span id="summaryPoints">-<?= $cur ?>0.00</span></div><?php endif ?>
-        <?php if ($vatEnabled): ?><div style="display:flex;justify-content:space-between;color:var(--pos-success);"><span>VAT</span><span id="summaryVat">+<?= $cur ?>0.00</span></div><?php endif ?>
-        <div style="display:flex;justify-content:space-between;font-size:1.1rem;font-weight:bold;margin-top:4px;padding-top:4px;border-top:1px dashed #555;color:#fff;">
-          <span>TOTAL</span><span id="summaryTotal"><?= $cur ?>0.00</span>
-        </div>
+      <div class="checkout-section" style="flex: 1; display:flex; flex-direction:column; justify-content:flex-end;">
+        <div class="summary-row"><span>Subtotal</span><span id="summarySubtotal"><?= $cur ?>0.00</span></div>
+        <?php if ($discEnabled): ?><div class="summary-row" style="color:var(--pos-danger);"><span>Discount</span><span id="summaryDiscount">-<?= $cur ?>0.00</span></div><?php endif ?>
+        <?php if ($pointsEnabled): ?><div class="summary-row" style="color:#ffd700;"><span>Points Val</span><span id="summaryPoints">-<?= $cur ?>0.00</span></div><?php endif ?>
+        <?php if ($vatEnabled): ?><div class="summary-row" style="color:var(--pos-success);"><span>VAT</span><span id="summaryVat">+<?= $cur ?>0.00</span></div><?php endif ?>
       </div>
+    </div>
 
-      <form method="POST" style="padding:8px 12px;" id="checkoutForm">
-        <input type="hidden" name="action"         value="finalize_sale">
-        <input type="hidden" name="customer_id"    id="hdCustomerId">
+    <div class="checkout-footer">
+      <div class="summary-total-compact">
+        <span>TOTAL</span><span id="summaryTotal"><?= $cur ?>0.00</span>
+      </div>
+      
+      <form method="POST" id="checkoutForm" style="margin:0;">
+        <input type="hidden" name="action" value="finalize_sale">
+        <input type="hidden" name="customer_id" id="hdCustomerId">
         <input type="hidden" name="customer_phone" id="hdCustomerPhone">
-        <input type="hidden" name="customer_name"  id="hdCustomerName">
-        <input type="hidden" name="discount_type"  id="hdDiscType">
-        <input type="hidden" name="discount_val"   id="hdDiscVal">
-        <input type="hidden" name="vat_type"       id="hdVatType">
-        <input type="hidden" name="vat_val"        id="hdVatVal">
-        <input type="hidden" name="points_used"    id="hdPointsUsed">
-        <input type="hidden" name="cart_json"      id="hiddenCartJson">
+        <input type="hidden" name="customer_name" id="hdCustomerName">
+        <input type="hidden" name="discount_type" id="hdDiscType">
+        <input type="hidden" name="discount_val" id="hdDiscVal">
+        <input type="hidden" name="vat_type" id="hdVatType">
+        <input type="hidden" name="vat_val" id="hdVatVal">
+        <input type="hidden" name="points_used" id="hdPointsUsed">
+        <input type="hidden" name="cart_json" id="hiddenCartJson">
 
-        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">
+        <div style="display:flex; gap:4px; margin-bottom: 6px;">
           <?php foreach(['cash'=>'💵 Cash','card'=>'💳 Card','transfer'=>'🏦 Bank'] as $pv=>$pl): ?>
-          <label style="display:flex;align-items:center;gap:4px;padding:4px;border-radius:4px;border:1px solid var(--pos-border);cursor:pointer;font-size:.75rem;flex:1;justify-content:center" class="pay-opt-wrap">
+          <label class="pay-opt-wrap <?= $pv==='cash'?'pay-selected':'' ?>">
             <input type="checkbox" name="payment_methods[]" value="<?= $pv ?>" class="pay-check" style="display:none;" <?= $pv==='cash'?'checked':'' ?>
                    onchange="this.closest('.pay-opt-wrap').classList.toggle('pay-selected',this.checked)">
             <?= $pl ?>
@@ -516,14 +684,11 @@ body, html {
           <?php endforeach ?>
         </div>
 
-        <div style="margin-top:8px;">
-          <label class="form-label">Notes</label>
-          <textarea name="notes" class="form-control" rows="2"></textarea>
-        </div>
+        <input type="text" name="notes" class="pos-input-sm" placeholder="Order note..." style="margin-bottom:6px;">
         
-        <div style="display:flex;gap:6px">
-          <button type="submit" name="submit_type" value="draft"    class="btn btn-sm" style="flex:1;background:#f39c12;color:#fff;border:none;" onclick="return processCheckout()">📋 Draft</button>
-          <button type="submit" name="submit_type" value="complete" class="btn btn-sm" style="flex:2;background:var(--pos-success);color:#fff;border:none;" onclick="return processCheckout()">✅ Finalize Sale</button>
+        <div style="display:flex; gap:6px;">
+          <button type="submit" name="submit_type" value="draft" class="btn-action-sm" style="background:#f39c12; flex:1;" onclick="return processCheckout()">📋 Draft</button>
+          <button type="submit" name="submit_type" value="complete" class="btn-action-sm" style="background:var(--pos-success); flex:2;" onclick="return processCheckout()">✅ Finalize</button>
         </div>
       </form>
     </div>
@@ -531,15 +696,15 @@ body, html {
 
 
   <div id="variantModalOverlay" class="pos-modal-overlay">
-  <div class="pos-modal">
-    <div class="pos-modal-header">
-      <h3 class="pos-modal-title" id="variantModalTitle">Select Variant</h3>
-      <button class="pos-modal-close" onclick="closeVariantModal()">×</button>
-    </div>
-    <div class="pos-modal-body" id="variantModalBody">
+    <div class="pos-modal">
+      <div class="pos-modal-header">
+        <h3 class="pos-modal-title" id="variantModalTitle">Select Variant</h3>
+        <button class="pos-modal-close" onclick="closeVariantModal()">×</button>
       </div>
+      <div class="pos-modal-body" id="variantModalBody"></div>
+    </div>
   </div>
-</div>
+
 </div>
 
 <script>
@@ -559,7 +724,6 @@ const DISC_MAX_AMT   = <?= (float)($S['discount_max_amount']??999999) ?>;
 const Cart = {
   items: [],
   
-  // Add item to cart
   add: function(variant) {
     let existing = this.items.find(i => i.variant_id == variant.variant_id);
     if (existing) {
@@ -582,7 +746,6 @@ const Cart = {
     this.render();
   },
 
-  // Update item quantity directly
   updateQty: function(index, qty) {
     qty = parseInt(qty) || 1;
     if (qty > this.items[index].max_qty) {
@@ -602,39 +765,29 @@ const Cart = {
     this.render();
   },
 
-  clear: function() {
-    this.items = [];
-    this.render();
-  },
+  getAll: function() { return this.items; },
+  getSubtotal: function() { return this.items.reduce((sum, item) => sum + (item.price * item.qty), 0); },
 
-  getAll: function() {
-    return this.items;
-  },
-
-  getSubtotal: function() {
-    return this.items.reduce((sum, item) => sum + (item.price * item.qty), 0);
-  },
-
-  // Renders the cart HTML and triggers calculations
   render: function() {
     const container = document.getElementById('cartItemsContainer');
     document.getElementById('cartCount').textContent = this.items.length;
     
     if (this.items.length === 0) {
-      container.innerHTML = '<p class="text-center" style="padding:24px; color:var(--pos-text-muted);">Cart is empty</p>';
+      container.innerHTML = '<div style="height: 100%; display: flex; align-items: center; justify-content: center; color: var(--pos-text-muted);">Cart is empty</div>';
     } else {
       let html = '';
       this.items.forEach((item, index) => {
-        const variantInfo = (item.size || item.color) ? `<br><small style="color:#aaa;">${item.size||''} ${item.color||''}</small>` : '';
+        const variantInfo = (item.size || item.color) ? `<span class="cart-item-meta">${item.size||''} ${item.color||''}</span>` : '';
         html += `
           <div class="cart-item-row">
-            <div style="flex:1; padding-right:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-              <span style="color:#fff;">${item.name}</span>${variantInfo}
+            <div class="cart-item-info">
+              <span class="cart-item-title">${item.name}</span>
+              ${variantInfo}
             </div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span style="color:var(--pos-success);">${CURRENCY}${item.price.toFixed(2)}</span>
+            <div class="cart-item-controls">
+              <span class="cart-item-price">${CURRENCY}${item.price.toFixed(2)}</span>
               <input type="number" class="qty-input" value="${item.qty}" min="1" onchange="Cart.updateQty(${index}, this.value)">
-              <button type="button" class="btn btn-sm" style="background:var(--pos-danger);color:#fff;padding:2px 6px;" onclick="Cart.remove(${index})">×</button>
+              <button type="button" class="btn-remove" onclick="Cart.remove(${index})">×</button>
             </div>
           </div>
         `;
@@ -642,36 +795,30 @@ const Cart = {
       container.innerHTML = html;
     }
     
-    // Automatically recalculate limits and totals every time cart changes
     liveValidateDiscount();
     liveValidateVAT();
     liveValidatePoints(); 
     this.updateTotals();
   },
 
-  // Update the summary numbers visually
   updateTotals: function() {
     const subtotal = this.getSubtotal();
     
-    // Discount Calculation
     const discType = document.getElementById('discountType')?.value || 'percent';
     const discVal = parseFloat(document.getElementById('discountPct')?.value) || 0;
     const discAmt = discType === 'percent' ? subtotal * (discVal / 100) : Math.min(discVal, subtotal);
     
-    // Points Calculation
     const ptsUsed = parseInt(document.getElementById('pointsUsed')?.value) || 0;
     const ptsValue = ptsUsed * POINTS_RATE;
 
     const afterDisc = Math.max(0, subtotal - discAmt - ptsValue);
 
-    // VAT Calculation
     const vatType = document.getElementById('vatType')?.value || 'percent';
     const vatVal = parseFloat(document.getElementById('vatRate')?.value) || 0;
     const vatAmt = vatType === 'percent' ? afterDisc * (vatVal / 100) : vatVal;
 
     const total = afterDisc + vatAmt;
 
-    // Update DOM safely
     if(document.getElementById('summarySubtotal')) document.getElementById('summarySubtotal').textContent = CURRENCY + subtotal.toFixed(2);
     if(document.getElementById('summaryDiscount')) document.getElementById('summaryDiscount').textContent = '-' + CURRENCY + discAmt.toFixed(2);
     if(document.getElementById('summaryPoints')) document.getElementById('summaryPoints').textContent = '-' + CURRENCY + ptsValue.toFixed(2);
@@ -684,24 +831,10 @@ const Cart = {
 // 3. UI AND AJAX FUNCTIONS
 // ============================================================================
 
-// Toggle Fullscreen explicitly targeting ONLY the POS Container
-// function toggleFullscreen() {
-//   const container = document.getElementById('posContainer');
-//   const btn = document.getElementById('fsBtn');
-//   if (!document.fullscreenElement) {
-//     container.requestFullscreen().catch(err => { alert(`Error: ${err.message}`); });
-//     btn.innerHTML = '🗗 Fullscreen';
-//   } else {
-//     document.exitFullscreen();
-//     btn.innerHTML = '⛶ Fullscreen';
-//   }
-// }
-
-// Fetch Customer by Phone
 function lookupCustomer(phone) {
   if (!phone) {
     document.getElementById('customerId').value = '';
-    document.getElementById('pointsBadge').textContent = '0';
+    if(document.getElementById('pointsBadge')) document.getElementById('pointsBadge').textContent = '0';
     liveValidatePoints();
     return;
   }
@@ -711,17 +844,15 @@ function lookupCustomer(phone) {
       if (data.id) {
         document.getElementById('customerId').value = data.id;
         document.getElementById('customerName').value = data.name;
-        document.getElementById('pointsBadge').textContent = data.points || 0;
+        if(document.getElementById('pointsBadge')) document.getElementById('pointsBadge').textContent = data.points || 0;
       } else {
         document.getElementById('customerId').value = '';
-        document.getElementById('pointsBadge').textContent = '0 (New Customer)';
+        if(document.getElementById('pointsBadge')) document.getElementById('pointsBadge').textContent = '0 (New)';
       }
       liveValidatePoints();
     });
 }
 
-// Fetch Variant info on grid click and auto-add
-// Fetch Variant info on grid click
 function fetchVariantsAndAdd(productId) {
   fetch(`?page=pos&action=get_variants&product_id=${productId}`)
     .then(r => r.json())
@@ -729,10 +860,8 @@ function fetchVariantsAndAdd(productId) {
       if(data.length === 0) {
         alert("Out of stock or invalid product.");
       } else if (data.length === 1) {
-        // Only one variant, add directly to cart
         Cart.add(data[0]);
       } else {
-        // Multiple variants exist, open selection modal
         openVariantModal(data);
       }
     })
@@ -742,54 +871,45 @@ function fetchVariantsAndAdd(productId) {
     });
 }
 
-// ── Modal Logic ──
+// Modal Logic
 function openVariantModal(variants) {
   const overlay = document.getElementById('variantModalOverlay');
   const body = document.getElementById('variantModalBody');
   const title = document.getElementById('variantModalTitle');
   
-  // Set the product name as the modal title (using the name of the first variant)
   title.textContent = variants[0].name;
-  body.innerHTML = ''; // Clear old buttons
+  body.innerHTML = ''; 
   
-  // Generate a button for each variant
   variants.forEach(variant => {
-    // Build the label (e.g., "Size: M | Color: Red")
     let attrs = [];
     if (variant.size) attrs.push(`Size: ${variant.size}`);
     if (variant.color) attrs.push(`Color: ${variant.color}`);
     let label = attrs.length > 0 ? attrs.join(' | ') : 'Default Variant';
     
-    // Create button
     const btn = document.createElement('button');
     btn.className = 'variant-btn';
     btn.innerHTML = `
-      <div class="variant-btn-info">
-        <span style="font-weight:600; color:#fff;">${label}</span>
-        <span style="font-size:0.75rem; color:#aaa;">Stock: ${variant.quantity}</span>
+      <div>
+        <span style="font-weight:600; color:#fff; display:block; margin-bottom: 2px;">${label}</span>
+        <span style="font-size:0.75rem; color:var(--pos-text-muted);">Stock: ${variant.quantity}</span>
       </div>
       <div class="variant-btn-price">${CURRENCY}${parseFloat(variant.price).toFixed(2)}</div>
     `;
     
-    // On click, add that specific variant to cart and close modal
     btn.onclick = () => {
       Cart.add(variant);
       closeVariantModal();
     };
-    
     body.appendChild(btn);
   });
   
-  // Show modal
   overlay.classList.add('active');
 }
 
 function closeVariantModal() {
-  const overlay = document.getElementById('variantModalOverlay');
-  overlay.classList.remove('active');
+  document.getElementById('variantModalOverlay').classList.remove('active');
 }
 
-// Close modal if user clicks the dark background outside the box
 document.getElementById('variantModalOverlay').addEventListener('click', function(e) {
   if (e.target === this) closeVariantModal();
 });
@@ -803,33 +923,22 @@ function searchByBarcode(bc) {
     });
 }
 
-// ============================================================================
-// 4. LIVE VALIDATION / CLAMPING
-// ============================================================================
-
+// Validation & Submissions
 function liveValidatePoints() {
   const el = document.getElementById('pointsUsed');
   if (!el) return;
   
   let val = parseInt(el.value);
-  if (isNaN(val) || val < 0) {
-    val = 0; 
-  }
+  if (isNaN(val) || val < 0) { val = 0; }
 
-  const customerPtsText = document.getElementById('pointsBadge')?.textContent || '0';
-  const customerPts = parseInt(customerPtsText) || 0;
-  
+  const customerPts = parseInt(document.getElementById('pointsBadge')?.textContent) || 0;
   const cartSubtotal = Cart.getSubtotal(); 
   const maxRedeemableCash = cartSubtotal * (MAX_REDEEM_PCT / 100);
   const maxRedeemablePts = Math.floor(maxRedeemableCash / POINTS_RATE);
   
   const absoluteMax = Math.min(customerPts, maxRedeemablePts);
 
-  // Apply clamp physically to the input
-  if (val > absoluteMax) {
-    el.value = absoluteMax; 
-  }
-
+  if (val > absoluteMax) { el.value = absoluteMax; }
   Cart.updateTotals();
 }
 
@@ -839,14 +948,11 @@ function liveValidateDiscount() {
   if (!el || !typeEl) return;
   
   let val = parseFloat(el.value);
-  if (isNaN(val) || val < 0) { val = 0; }
+  if (isNaN(val) || val < 0) val = 0;
 
   const type = typeEl.value;
-  if (type === 'percent' && val > DISC_MAX_PCT) {
-    el.value = DISC_MAX_PCT; 
-  } else if (type === 'amount' && DISC_MAX_AMT > 0 && val > DISC_MAX_AMT) {
-    el.value = DISC_MAX_AMT; 
-  }
+  if (type === 'percent' && val > DISC_MAX_PCT) { el.value = DISC_MAX_PCT; } 
+  else if (type === 'amount' && DISC_MAX_AMT > 0 && val > DISC_MAX_AMT) { el.value = DISC_MAX_AMT; }
   Cart.updateTotals();
 }
 
@@ -856,28 +962,25 @@ function liveValidateVAT() {
   if (!el || !typeEl) return;
   
   let val = parseFloat(el.value);
-  if (isNaN(val) || val < 0) { val = 0; }
+  if (isNaN(val) || val < 0) val = 0;
 
-  const type = typeEl.value;
-  if (type === 'percent' && val > 100) {
-    el.value = 100; 
-  }
+  if (typeEl.value === 'percent' && val > 100) { el.value = 100; }
   Cart.updateTotals();
 }
 
 function togglePoints(on) {
-  const row = document.getElementById('pointsInputRow');
-  if (row) row.classList.toggle('hidden', !on);
   const el = document.getElementById('pointsUsed');
   if (el) {
-    if (!on) el.value = ''; 
-    liveValidatePoints(); 
+    if(on) { 
+      el.style.display = 'block'; 
+    } else { 
+      el.style.display = 'none'; 
+      el.value = ''; 
+      liveValidatePoints(); 
+    }
   }
 }
 
-// ============================================================================
-// 5. SUBMISSION PREPARATION
-// ============================================================================
 function processCheckout() {
   if (Cart.getAll().length === 0) {
     alert("Cart is empty!");
@@ -894,7 +997,6 @@ function processCheckout() {
     }
   }
 
-  // Populate hidden form elements
   document.getElementById('hdCustomerId').value    = document.getElementById('customerId')?.value || '';
   document.getElementById('hdCustomerPhone').value = document.getElementById('customerPhone')?.value || '';
   document.getElementById('hdCustomerName').value  = document.getElementById('customerName')?.value || '';
@@ -910,7 +1012,7 @@ function processCheckout() {
   return true; 
 }
 
-// Block negative symbols physically
+// Setup Event Listeners & Initialize
 document.addEventListener('DOMContentLoaded', () => {
   ['pointsUsed','discountPct','vatRate'].forEach(id => {
     const el = document.getElementById(id);
@@ -921,12 +1023,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   
-  // Initialize payment buttons UI
-  document.querySelectorAll('.pay-check:checked').forEach(el => el.closest('.pay-opt-wrap').classList.add('pay-selected'));
-  
-  // Initial render
   Cart.render();
-
 const navToggle  = document.getElementById('navToggle');
 const sideNav    = document.getElementById('sideNav');
 const navOverlay = document.getElementById('navOverlay');
@@ -956,28 +1053,33 @@ document.querySelectorAll('.nav-link').forEach(link => {
   link.addEventListener('click', closeMenu);
 });
 
+  // Search and Filter logic
+  const pSearch = document.getElementById('productSearch');
+  const cFilter = document.getElementById('categoryFilter');
+  const bFilter = document.getElementById('brandFilter'); // NEW Brand Filter
 
+  function filterProducts() {
+    const searchTerm = pSearch.value.toLowerCase();
+    const categoryId = cFilter.value;
+    const brandId    = bFilter.value;
+    
+    document.querySelectorAll('.product-tile').forEach(tile => {
+      const name = tile.dataset.name || '';
+      const category = tile.dataset.category || '';
+      const brand = tile.dataset.brand || '';
+      
+      const matchesSearch = name.includes(searchTerm);
+      const matchesCategory = !categoryId || category === categoryId;
+      const matchesBrand = !brandId || brand === brandId;
+      
+      tile.style.display = (matchesSearch && matchesCategory && matchesBrand) ? 'flex' : 'none';
+    });
+  }
+
+  if(pSearch) pSearch.addEventListener('input', filterProducts);
+  if(cFilter) cFilter.addEventListener('change', filterProducts);
+  if(bFilter) bFilter.addEventListener('change', filterProducts);
 });
-
-//update product grid based on search and category filter
-document.getElementById('productSearch').addEventListener('input', filterProducts);
-document.getElementById('categoryFilter').addEventListener('change', filterProducts);
-function filterProducts() {
-  const searchTerm = document.getElementById('productSearch').value.toLowerCase();
-  const categoryId = document.getElementById('categoryFilter').value;
-  
-  document.querySelectorAll('.product-tile').forEach(tile => {
-    const name = tile.dataset.name || '';
-    const category = tile.dataset.category || '';
-    
-    const matchesSearch = name.includes(searchTerm);
-    const matchesCategory = !categoryId || category === categoryId;
-    
-    tile.style.display = (matchesSearch && matchesCategory) ? 'block' : 'none';
-  });
-}
-
-
 </script>
 
 <?php require_once BASE_PATH . '/includes/footer.php'; ?>

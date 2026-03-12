@@ -299,7 +299,7 @@ tbody tr:last-child td { border-bottom: none; }
 .flash-error   { background: rgba(239,68,68,.1);  border: 1px solid rgba(239,68,68,.3);  color: var(--danger); }
 .flash-info    { background: rgba(79,142,247,.1); border: 1px solid rgba(79,142,247,.3); color: var(--accent); }
 
-/* ── POS Grid ───────────────────────────────────────────────── */
+/* ── POS Grid ─────────────────────────────────────────────────
 .pos-layout {
   display: grid;
   grid-template-columns: 1fr;
@@ -328,7 +328,7 @@ tbody tr:last-child td { border-bottom: none; }
   padding: 12px;
   cursor: pointer;
   transition: border-color .15s, transform .1s;
-  /* user-select: none; */
+
 }
 .product-tile:hover { border-color: var(--accent); }
 .product-tile:active { transform: scale(.96); }
@@ -337,7 +337,7 @@ tbody tr:last-child td { border-bottom: none; }
 .product-tile .tile-stock { font-size: .72rem; color: var(--text-muted); margin-top: 4px; }
 .product-tile.out-of-stock { opacity: .45; cursor: not-allowed; }
 
-/* Cart panel */
+
 .cart-panel {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -384,7 +384,7 @@ tbody tr:last-child td { border-bottom: none; }
   font-size: 1.2rem; font-weight: 800;
   color: var(--success); margin-top: 8px; padding-top: 8px;
   border-top: 1px solid var(--border);
-}
+} */
 
 /* ── Modal ──────────────────────────────────────────────────── */
 .modal-backdrop {

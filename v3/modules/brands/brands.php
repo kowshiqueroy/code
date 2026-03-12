@@ -11,7 +11,7 @@ if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$name) { flash('error', 'Name is required.'); redirect('brands'); }
     if ($id) {
         dbUpdate('brands', ['name' => $name], 'id = ?', [$id]);
-        logAction('UPDATE', 'brands', $id, "Renamed brand: $name");
+        logAction('UPDATE', 'brands', $id, "Renamed brand from '{$_POST['old_name']}' to '$name'");
         flash('success', 'brand updated.');
     } else {
         $newId = dbInsert('brands', ['name' => $name, 'created_at' => now()]);
@@ -24,7 +24,7 @@ if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 if ($action === 'delete' && canDelete()) {
     $id = (int)$_GET['id'];
     dbDelete('brands', 'id = ?', [$id]);
-    logAction('DELETE', 'brands', $id, 'Deleted brand');
+    logAction('DELETE', 'brands', $id, "Deleted brand: '{$_GET['name']}'");
     flash('success', 'brand deleted.');
     redirect('brands');
 }

@@ -53,7 +53,7 @@ if ($action === 'save_settings') {
         if ($existing) { dbUpdate('settings', ['value'=>$value], '`key` = ?', [$key]); }
         else { dbInsert('settings', ['key'=>$key,'value'=>$value]); }
     }
-    logAction('UPDATE','settings',null,'Updated system settings');
+    logAction('UPDATE','settings',null,'Updated system settings to: ' . json_encode($fields));
     flash('success','Settings saved.');
     redirect('settings');
 }

@@ -8,12 +8,13 @@ $products = dbFetchAll(
 );
 foreach ($products as &$p) {
     $p['variants'] = dbFetchAll(
-        'SELECT id, size, color, price, quantity, barcode FROM product_variants WHERE product_id = ? ORDER BY id',
+        'SELECT id, size, color, price,cost, quantity, barcode FROM product_variants WHERE product_id = ? ORDER BY id',
         [$p['id']]
     );
 }
 $S   = getAllSettings();
 $cur = $S['currency_symbol'] ?? '$';
+$companyName = $S['shop_name'] ?? '.....................';
 
 $pageTitle = 'Print Barcodes';
 require_once BASE_PATH . '/includes/header.php';
@@ -66,7 +67,7 @@ require_once BASE_PATH . '/includes/header.php';
     </div>
     <div class="form-group mb-0">
       <label class="form-label text-muted">Label Height (mm)</label>
-      <input type="number" id="labelH" class="form-control" value="30" min="10" oninput="renderLabels()">
+      <input type="number" id="labelH" class="form-control" value="50" min="10" oninput="renderLabels()">
     </div>
     <div class="form-group mb-0">
       <label class="form-label text-muted">Gap Between Labels (mm)</label>
@@ -109,6 +110,7 @@ require_once BASE_PATH . '/includes/header.php';
                data-size="<?= e($v['size']??'') ?>"
                data-color="<?= e($v['color']??'') ?>"
                data-price="<?= $v['price'] ?>"
+                data-cost="<?= $v['cost'] ?>"
                data-stock="<?= $v['quantity'] ?>"
                data-barcode="<?= e($v['barcode']??'') ?>"
                onchange="renderLabels()">
@@ -116,8 +118,9 @@ require_once BASE_PATH . '/includes/header.php';
         <div style="flex:1; overflow:hidden;">
           <strong style="display:block; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; color:var(--text);"><?= e($p['name']) ?></strong>
           <div class="text-muted" style="font-size:0.75rem;">
-            <?= e($v['size']??'') ?> <?= e($v['color']??'') ?> — <span style="color:var(--success); font-weight:bold;"><?= $cur . number_format($v['price'],2) ?></span>
+            <?= e($v['size']??'') ?> <?= e($v['color']??'') ?> — <span style="color:var(--success); font-weight:bold;"><?= $cur . number_format($v['price'],2) ?></span><span style=" font-weight:bold;"></span> <?= $cur . number_format($v['cost'],2) ?></span>
           </div>
+         
         </div>
         
         <input type="number" class="vqty form-control form-control-sm" value="1" min="1" max="999"
@@ -145,9 +148,11 @@ require_once BASE_PATH . '/includes/header.php';
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
   color: #000; text-align: center; line-height: 1.2;
 }
-.lbl-title { font-weight: bold; font-size: 8pt; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
-.lbl-meta  { font-size: 7pt; color: #333; }
-.lbl-price { font-size: 10pt; font-weight: 900; margin-top: 2px; }
+.lbl-title { font-weight: bold; font-size: 12pt; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+.lbl-meta  { font-size: 10pt; color: #333; }
+.lbl-cost { font-size: 9pt; font-weight: 900; margin-top: 2px; }
+.lbl-discount { font-size: 10pt; font-weight: 700; margin-top: 0px; }
+.lbl-price { font-size: 12pt; font-weight: 900; margin-top: 2px; }
 
 /* The actual barcode font class */
 .lbl-barcode {
@@ -176,6 +181,7 @@ require_once BASE_PATH . '/includes/header.php';
 
 <script>
 const CURRENCY = '<?= addslashes($cur) ?>';
+const COMPANY = '<?= addslashes($companyName) ?>';
 
 // Toggle UI inputs for Custom Paper
 function togglePaperSettings() {
@@ -196,6 +202,7 @@ function getChecked() {
       size: el.dataset.size, 
       color: el.dataset.color,
       price: el.dataset.price, 
+      cost: el.dataset.cost,
       barcode: el.dataset.barcode,
       qty 
     };
@@ -312,12 +319,17 @@ function renderLabels() {
       if (v.size) meta.push(esc(v.size));
       if (v.color) meta.push(esc(v.color));
       if (meta.length > 0) content += `<div class="lbl-meta">${meta.join(', ')}</div>`;
-      
+      content += `<div class="lbl-cost">${CURRENCY}${parseFloat(v.cost).toFixed(2)}</div>`;  
+         content += `<div class="lbl-discount">${CURRENCY}${parseFloat(v.cost-v.price).toFixed(2)}</div>`;  
       content += `<div class="lbl-price">${CURRENCY}${parseFloat(v.price).toFixed(2)}</div>`;
     }
     
     // Libre Barcode 39 Text needs asterisks wrapping the text to scan properly
     content += `<div class="lbl-barcode" style="font-size: ${bcSize}px;">*${codeStr}*</div>`;
+    
+
+      content += `<div class="lbl-code">${COMPANY}</div>`;
+    
     
     content += `</div>`;
     

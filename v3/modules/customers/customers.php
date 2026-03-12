@@ -14,12 +14,12 @@ if ($action === 'save_customer' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
     if ($id) {
         dbUpdate('customers', $data, 'id = ?', [$id]);
-        logAction('UPDATE', 'customers', $id, 'Updated customer');
+        logAction('UPDATE', 'customers', $id, 'Updated customer: ' . $data['name']. ' with data: ' . json_encode($data));
         flash('success', 'Customer updated.');
     } else {
         $data['created_at'] = now();
         $newId = dbInsert('customers', $data);
-        logAction('CREATE', 'customers', $newId, 'Created customer');
+        logAction('CREATE', 'customers', $newId, 'Created customer: ' . $data['name']. ' with data: ' . json_encode($data));
         flash('success', 'Customer added.');
     }
     redirect('customers');
@@ -28,7 +28,7 @@ if ($action === 'save_customer' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 if ($action === 'delete' && canDelete()) {
     $id = (int)$_GET['id'];
     dbDelete('customers', 'id = ?', [$id]);
-    logAction('DELETE', 'customers', $id, 'Deleted customer');
+    logAction('DELETE', 'customers', $id, 'Deleted customer: ' . $data['name']. ' with data: ' . json_encode($data));
     flash('success', 'Customer deleted.');
     redirect('customers');
 }

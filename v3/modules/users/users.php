@@ -19,7 +19,9 @@ if ($action === 'save_user' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if ($id) {
         dbUpdate('users', $data, 'id = ?', [$id]);
-        logAction('UPDATE', 'users', $id, 'Updated user: ' . $data['username']);
+    
+        dbUpdate('users', $data, 'id = ?', [$id]);
+        logAction('UPDATE', 'users', $id, 'Updated user: ' . $data['username'] . ' with data: ' . json_encode($data));
         flash('success', 'User updated.');
     } else {
         if (empty($_POST['password'])) { flash('error', 'Password required for new users.'); redirect('users'); }
@@ -32,14 +34,7 @@ if ($action === 'save_user' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect('users');
 }
 
-if ($action === 'delete') {
-    $id = (int)$_GET['id'];
-    if ($id === currentUser()['id']) { flash('error', 'Cannot delete yourself.'); redirect('users'); }
-    dbDelete('users', 'id = ?', [$id]);
-    logAction('DELETE', 'users', $id, 'Deleted user');
-    flash('success', 'User deleted.');
-    redirect('users');
-}
+
 
 $users   = dbFetchAll('SELECT * FROM users ORDER BY full_name');
 $editing = !empty($_GET['edit']) ? dbFetch('SELECT * FROM users WHERE id = ?', [(int)$_GET['edit']]) : null;
@@ -68,7 +63,7 @@ require_once BASE_PATH . '/includes/header.php';
           <td>
             <a href="index.php?page=users&edit=<?= $u['id'] ?>" class="btn btn-ghost btn-sm">✏️ Edit</a>
             <?php if ($u['id'] !== currentUser()['id']): ?>
-            <a href="index.php?page=users&action=delete&id=<?= $u['id'] ?>" class="btn btn-danger btn-sm" data-confirm="Delete this user?">🗑️</a>
+            <a href="index.php?page=users&action=delete&id=<?= $u['id'] ?>" class="btn btn-danger btn-sm" data-confirm="Ask Developer to delete this user.">🗑️</a>
             <?php endif ?>
           </td>
         </tr>

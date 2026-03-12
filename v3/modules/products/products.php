@@ -12,6 +12,7 @@ if ($action === 'save_product' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $id     = (int)($_POST['product_id_db'] ?? 0);
     $data   = [
         'category_id' => (int)$_POST['category_id'] ?: null,
+        'brand_id'    => (int)$_POST['brand_id'] ?: null,
         'name'        => trim($_POST['name']),
         'description' => trim($_POST['description'] ?? ''),
         'active'      => 1,
@@ -81,27 +82,31 @@ if ($action === 'save_product' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 if ($action === 'delete' && canDelete()) {
     $id = (int)($_GET['id'] ?? 0);
     dbDelete('products', 'id = ?', [$id]);
-    logAction('DELETE', 'products', $id, 'Deleted product');
+    logAction('DELETE', 'products', $id, 'Deleted product: ' . dbFetch('SELECT name FROM products WHERE id = ?', [$id])['name'] ?? '');
     flash('success', 'Product deleted.');
     redirect('products');
 }
 
 // ── Load data ─────────────────────────────────────────────────
 $categories = dbFetchAll('SELECT * FROM categories ORDER BY name');
+$brands     = dbFetchAll('SELECT * FROM brands ORDER BY name');
 $search     = trim($_GET['q'] ?? '');
 $catFilter  = (int)($_GET['cat'] ?? 0);
+$brandFilter  = (int)($_GET['brand'] ?? 0);
 
 $where  = '1=1';
 $params = [];
 if ($search) { $where .= ' AND p.name LIKE ?'; $params[] = "%$search%"; }
 if ($catFilter) { $where .= ' AND p.category_id = ?'; $params[] = $catFilter; }
+if ($brandFilter) { $where .= ' AND p.brand_id = ?'; $params[] = $brandFilter; }
 
 $products = dbFetchAll(
-    "SELECT p.*, c.name AS category_name,
+    "SELECT p.*, c.name AS category_name, b.name AS brand_name,
             COUNT(v.id) AS variant_count,
             SUM(v.quantity) AS total_stock
      FROM products p
      LEFT JOIN categories c ON c.id = p.category_id
+     LEFT JOIN brands b ON b.id = p.brand_id  
      LEFT JOIN product_variants v ON v.product_id = p.id
      WHERE $where
      GROUP BY p.id
@@ -137,6 +142,13 @@ require_once BASE_PATH . '/includes/header.php';
       <option value="<?= $c['id'] ?>" <?= $catFilter == $c['id'] ? 'selected' : '' ?>><?= e($c['name']) ?></option>
     <?php endforeach ?>
   </select>
+  
+   <select name="brand" class="form-control" style="max-width:160px">
+    <option value="">All Brands</option>
+    <?php foreach ($brands as $b): ?>
+      <option value="<?= $b['id'] ?>" <?= $brandFilter == $b['id'] ? 'selected' : '' ?>><?= e($b['name']) ?></option>
+    <?php endforeach ?>
+  </select>
   <button type="submit" class="btn btn-ghost">Filter</button>
   <a href="index.php?page=products" class="btn btn-ghost">Reset</a>
 </form>
@@ -147,7 +159,7 @@ require_once BASE_PATH . '/includes/header.php';
     <table>
       <thead>
         <tr>
-          <th>Product ID</th><th>Name</th><th>Category</th>
+          <th>ID</th><th>Name</th><th>Category</th><th>Brand</th>
           <th>Variants</th><th>Total Stock</th><th>Actions</th>
         </tr>
       </thead>
@@ -158,11 +170,12 @@ require_once BASE_PATH . '/includes/header.php';
         <?php foreach ($products as $p): ?>
         <tr>
           <td>
-            <!-- <div class="barcode-text" style="font-size:1.2rem"><?= e($p['product_id']) ?></div> -->
-            <div class="barcode-id"><?= e($p['product_id']) ?></div>
+        
+         <?= e($p['id']) ?>
           </td>
           <td><strong><?= e($p['name']) ?></strong></td>
           <td><?= e($p['category_name'] ?? '—') ?></td>
+          <td><?= e($p['brand_name'] ?? '—') ?></td>
           <td><span class="badge badge-info"><?= $p['variant_count'] ?></span></td>
           <td><?= (int)$p['total_stock'] ?></td>
           <td>
