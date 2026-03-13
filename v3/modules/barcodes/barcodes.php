@@ -3,8 +3,8 @@
 // modules/barcodes/barcodes.php — Professional Label Printer
 // ============================================================
 $products = dbFetchAll(
-    "SELECT p.id, p.product_id, p.name, c.name AS category_name
-     FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.active = 1 ORDER BY p.name"
+    "SELECT p.id, p.product_id, p.name, p.description, c.name AS category_name, b.name AS brand_name
+     FROM products p LEFT JOIN categories c ON c.id = p.category_id LEFT JOIN brands b ON b.id = p.brand_id WHERE p.active = 1 ORDER BY p.name"
 );
 foreach ($products as &$p) {
     $p['variants'] = dbFetchAll(
@@ -107,6 +107,9 @@ require_once BASE_PATH . '/includes/header.php';
         <input type="checkbox" class="vcheck" style="width:18px;height:18px;cursor:pointer;" checked
                data-vid="<?= $v['id'] ?>"
                data-name="<?= e($p['name']) ?>"
+               data-description="<?= e($p['description']) ?>"
+               data-category="<?= e($p['category_name']) ?>"
+                data-brand="<?= e($p['brand_name']) ?>"
                data-size="<?= e($v['size']??'') ?>"
                data-color="<?= e($v['color']??'') ?>"
                data-price="<?= $v['price'] ?>"
@@ -117,6 +120,10 @@ require_once BASE_PATH . '/includes/header.php';
                
         <div style="flex:1; overflow:hidden;">
           <strong style="display:block; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; color:var(--text);"><?= e($p['name']) ?></strong>
+          <div class="text-muted" style="font-size:0.75rem;">
+          <?= e($p['category_name']) ?> - <?= e($p['brand_name']) ?> <?= e($p['description']) ?>
+          </div>
+       
           <div class="text-muted" style="font-size:0.75rem;">
             <?= e($v['size']??'') ?> <?= e($v['color']??'') ?> — <span style="color:var(--success); font-weight:bold;"><?= $cur . number_format($v['price'],2) ?></span><span style=" font-weight:bold;"></span> <?= $cur . number_format($v['cost'],2) ?></span>
           </div>
@@ -150,7 +157,10 @@ require_once BASE_PATH . '/includes/header.php';
 }
 .lbl-title { font-weight: bold; font-size: 12pt; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
 .lbl-meta  { font-size: 10pt; color: #333; }
-.lbl-cost { font-size: 9pt; font-weight: 900; margin-top: 2px; }
+lbl-cost {
+  font-size: 10pt; font-weight: 700; margin-top: 0px;
+  text-decoration: line-through; 
+      }
 .lbl-discount { font-size: 10pt; font-weight: 700; margin-top: 0px; }
 .lbl-price { font-size: 12pt; font-weight: 900; margin-top: 2px; }
 
@@ -199,6 +209,9 @@ function getChecked() {
     return { 
       vid: el.dataset.vid, 
       name: el.dataset.name, 
+      description: el.dataset.description,
+      category: el.dataset.category,
+      brand: el.dataset.brand,
       size: el.dataset.size, 
       color: el.dataset.color,
       price: el.dataset.price, 
@@ -319,9 +332,17 @@ function renderLabels() {
       if (v.size) meta.push(esc(v.size));
       if (v.color) meta.push(esc(v.color));
       if (meta.length > 0) content += `<div class="lbl-meta">${meta.join(', ')}</div>`;
-      content += `<div class="lbl-cost">${CURRENCY}${parseFloat(v.cost).toFixed(2)}</div>`;  
-         content += `<div class="lbl-discount">${CURRENCY}${parseFloat(v.cost-v.price).toFixed(2)}</div>`;  
-      content += `<div class="lbl-price">${CURRENCY}${parseFloat(v.price).toFixed(2)}</div>`;
+           const description = [];
+           if (v.brand) description.push(esc(v.brand));
+           if (v.description) description.push(esc(v.description));
+           if (description.length > 0) content += `<div class="lbl-meta">${description.join(' ')}</div>`;
+      if (parseFloat(v.price) < parseFloat(v.cost)) {
+        content += `<div class="lbl-cost">Regular: ${CURRENCY}${parseFloat(v.cost).toFixed(2)}</div>`;  
+        content += `<div class="lbl-discount">Discount: ${CURRENCY}${parseFloat(v.cost-v.price).toFixed(2)}</div>`;  
+      }
+
+
+      content += `<div class="lbl-price">Sale: ${CURRENCY}${parseFloat(v.price).toFixed(2)}</div>`;
     }
     
     // Libre Barcode 39 Text needs asterisks wrapping the text to scan properly

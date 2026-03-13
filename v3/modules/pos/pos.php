@@ -66,6 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'final
     $vatVal     = (float)($_POST['vat_val']       ?? 0);
     $pointsUsed = (int)($_POST['points_used']     ?? 0);
     $notes      = trim($_POST['notes']            ?? '');
+    // $sms        = isset($_POST['sms']) ? 1 : 0; // For potential SMS receipt feature
 
     $payMethods = (array)($_POST['payment_methods'] ?? ['cash']);
     $payMethods = array_values(array_filter($payMethods, fn($m) => in_array($m, ['cash','card','transfer'])));
@@ -153,7 +154,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'final
         }
         db()->commit();
         logAction('SALE', 'pos', $saleId, "Invoice $invoiceNo — $status");
-        if ($status === 'completed') redirect('invoice', ['id' => $saleId]);
+        if ($status === 'completed')
+          {
+            // if ($sms) sendSMS($customerPhone, "Thank you for your purchase! Invoice: $invoiceNo, Total: $cur$total"); 
+            // sms api integration can be added here in the future using the $sms variable to check if the option was selected
+ redirect('invoice', ['id' => $saleId]);
+          }
+         
         else { flash('success', 'Draft saved.'); redirect('pos'); }
     } catch (Exception $e) {
         db()->rollBack();
@@ -687,6 +694,10 @@ body, html {
         <input type="text" name="notes" class="pos-input-sm" placeholder="Order note..." style="margin-bottom:6px;">
         
         <div style="display:flex; gap:6px;">
+          <label class="pay-opt-wrap">
+            <input type="checkbox" name="sms" class="pay-check" style="display:none;" onchange="this.closest('.pay-opt-wrap').classList.toggle('pay-selected',this.checked)" checked>
+            <span class="pay-opt">SMS</span>
+          </label>
           <button type="submit" name="submit_type" value="draft" class="btn-action-sm" style="background:#f39c12; flex:1;" onclick="return processCheckout()">📋 Draft</button>
           <button type="submit" name="submit_type" value="complete" class="btn-action-sm" style="background:var(--pos-success); flex:2;" onclick="return processCheckout()">✅ Finalize</button>
         </div>
