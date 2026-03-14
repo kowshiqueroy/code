@@ -1,0 +1,24 @@
+Options -Indexes
+Options +FollowSymLinks
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Allow direct access to setup.php
+  RewriteRule ^setup\.php$ - [L]
+
+  # Allow direct access to admin folder
+  RewriteRule ^admin/.*$ - [L]
+
+  # Skip rewrite for static assets
+  RewriteCond %{REQUEST_URI} \.(css|js|png|jpg|jpeg|gif|svg|webp|ico)$ [NC]
+  RewriteRule ^ - [L]
+
+  # Allow direct access to existing files and directories
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+
+  # All other requests go to index.php
+  RewriteRule ^(.*)$ index.php [L,QSA]
+</IfModule>

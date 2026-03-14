@@ -1,0 +1,6 @@
+# admin/.htaccess
+Options -Indexes
+
+<IfModule mod_headers.c>
+  Header always set X-Frame-Options "DENY"
+</IfModule>
