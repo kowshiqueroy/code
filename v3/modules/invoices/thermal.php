@@ -146,7 +146,7 @@ $qrUrl  = 'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=' . url
 
     <div class="text-center">
         <img src="<?= $qrUrl ?>" class="qr-code" alt="QR">
-        <div style="font-size:11px; margin-bottom: 5px;"><?= e($S['invoice_footer'] ?? 'Thank you for your purchase!') ?></div>
+        <div style="font-size:11px; margin-bottom: 5px;"><?= e($S['invoice_footer'] ?? 'Thank you for your purchase!') ?> <br>Powered by sohojweb.com</div>
     </div>
     
     <div class="cut-line"></div>

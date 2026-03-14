@@ -194,7 +194,7 @@ require_once BASE_PATH . '/includes/header.php';
 
     <div class="inv-footer">
       <div class="inv-greet"><?= e($S['invoice_footer'] ?? 'Thank you for your business!') ?></div>
-      <div class="inv-credit">Powered by Modern POS</div>
+      <div class="inv-credit">Powered by sohojweb.com</div>
     </div>
 
   </div>

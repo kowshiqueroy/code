@@ -225,7 +225,7 @@ $cur   = $S['currency_symbol'] ?? '$';
 
     <div class="footer">
         <strong><?= e($S['invoice_footer'] ?? 'Thank you for your business!') ?></strong><br>
-        <span style="display:inline-block; margin-top:8px; font-size:11px;">This is a digitally verified electronic receipt.<br>Powered by Modern POS.</span>
+        <span style="display:inline-block; margin-top:8px; font-size:11px;">This is a digitally verified electronic receipt.<br>Powered by sohojweb.com.</span>
     </div>
 </div>
 

@@ -8,7 +8,7 @@ if (isLoggedIn()) { redirect('dashboard'); }
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (login(trim($_POST['username'] ?? ''), $_POST['password'] ?? '')) {
+    if (login(strtoupper(trim($_POST['username'] ?? '')), $_POST['password'] ?? '')) {
         redirect('dashboard');
     }
     $error = 'Invalid username or password.';

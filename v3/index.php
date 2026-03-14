@@ -27,6 +27,7 @@ if ($page === 'login') {
 $routes = [
     'dashboard'      => 'modules/dashboard/dashboard.php',
     'pos'            => 'modules/pos/pos.php',
+    'pos_edit'       => 'modules/pos/pos_edit.php',
     'products'       => 'modules/products/products.php',
     'categories'     => 'modules/categories/categories.php',
     'brands'         => 'modules/brands/brands.php',

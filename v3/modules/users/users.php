@@ -9,7 +9,7 @@ $action = $_POST['action'] ?? $_GET['action'] ?? '';
 if ($action === 'save_user' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $id   = (int)($_POST['user_id_db'] ?? 0);
     $data = [
-        'username'  => trim($_POST['username']),
+        'username'  => strtoupper(trim($_POST['username'])),
         'full_name' => trim($_POST['full_name']),
         'role'      => in_array($_POST['role'], ['admin','sr']) ? $_POST['role'] : 'sr',
         'active'    => isset($_POST['active']) ? 1 : 0,
