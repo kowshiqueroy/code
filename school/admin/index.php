@@ -29,7 +29,7 @@ $sections = [
 // Handle logout
 if ($adminPage === 'logout') {
     session_destroy();
-    redirect(ADMIN_PATH . 'login.php');
+    redirect('login.php');
 }
 
 $pageFile = __DIR__ . '/pages/' . $adminPage . '.php';
@@ -45,7 +45,7 @@ $siteName = getSetting('site_name_en', 'School');
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title><?= h(ucfirst($adminPage)) ?> — Admin Panel</title>
-<link rel="stylesheet" href="<?= ADMIN_PATH ?>assets/css/admin.css">
+<link rel="stylesheet" href="assets/css/admin.css">
 </head>
 <body>
 <div class="admin-layout">

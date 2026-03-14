@@ -4,7 +4,7 @@ session_name('school_admin_sess');
 session_start();
 require_once __DIR__ . '/../includes/functions.php';
 
-if (isLoggedIn()) { redirect(ADMIN_PATH); }
+if (isLoggedIn()) { redirect("../admin"); }
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_name'] = $user['full_name'];
             // Update last login
             getDB()->prepare("UPDATE users SET last_login=NOW() WHERE id=?")->execute([$user['id']]);
-            redirect(ADMIN_PATH);
+            redirect("../admin");
         } else {
             $error = 'Invalid username or password.';
         }

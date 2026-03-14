@@ -11,7 +11,7 @@ define('DB_CHARSET', 'utf8mb4');
 
 // Site base path (auto-detected; override if needed)
 define('SITE_ROOT', dirname(__DIR__));
-define('BASE_URL', (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/\\'));
+define('BASE_URL', (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost/code/school') . rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/\\'));
 define('UPLOAD_PATH', SITE_ROOT . '/uploads/');
 define('UPLOAD_URL', BASE_URL . '/uploads/');
 
@@ -23,7 +23,7 @@ define('IMG_PORTRAIT', ['w' => 300, 'h' => 300]); // staff/teacher photos 1:1
 
 // Session
 define('SESSION_NAME', 'school_admin_sess');
-define('ADMIN_PATH', BASE_URL . '/admin/');
+define('ADMIN_PATH', BASE_URL . '/admin');
 
 // Timezone
 date_default_timezone_set('Asia/Dhaka');

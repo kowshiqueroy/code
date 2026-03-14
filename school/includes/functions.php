@@ -352,7 +352,7 @@ function isLoggedIn(): bool {
 
 function requireLogin(): void {
     if (!isLoggedIn()) {
-        redirect(ADMIN_PATH . 'login.php');
+        redirect('login.php');
     }
 }
 
