@@ -8,7 +8,7 @@ define('APP_VERSION', '3.2.1');
 if (strpos($_SERVER['HTTP_HOST'], 'localhost') !== false) {
     define('BASE_URL',    'http://localhost/code/v3');
 } else {
-    define('BASE_URL',    'https://3348-202-191-127-232.ngrok-free.app/code/v3');
+    define('BASE_URL',    ' https://7504-202-191-127-233.ngrok-free.app/code/v3');
 }
 
 define('BASE_PATH',   __DIR__);
@@ -21,7 +21,7 @@ define('DB_PASS', '');
 define('DB_CHARSET', 'utf8mb4');
 
 // ── Currency & Tax ────────────────────────────────────────────
-define('CURRENCY_SYMBOL', '$');
+define('CURRENCY_SYMBOL', '৳');
 define('DEFAULT_VAT',      0.15);   // 15%
 define('POINTS_RATE',      0.01);   // 1 point per $1 spent
 
