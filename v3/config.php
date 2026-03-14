@@ -42,4 +42,4 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 // ── Timezone ──────────────────────────────────────────────────
-date_default_timezone_set('UTC');
+date_default_timezone_set('Asia/Dhaka');

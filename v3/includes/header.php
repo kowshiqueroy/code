@@ -69,6 +69,7 @@ function navLink(string $page, string $icon, string $label, string $curPage): st
     <?= navLink('sales',    '🧾', 'Sales', $curPage) ?>
     <?= navLink('finance',  '💰', 'Finance', $curPage) ?>
     <?= navLink('reports',  '📈', 'Reports', $curPage) ?>
+    <?= navLink('inventory_report',  '📊', 'Inventory Report', $curPage) ?>
   </div>
 
   <?php if (isAdmin()): ?>
@@ -77,6 +78,8 @@ function navLink(string $page, string $icon, string $label, string $curPage): st
     <?= navLink('users',    '👥', 'Users',       $curPage) ?>
     <?= navLink('logs',     '📋', 'Action Logs', $curPage) ?>
     <?= navLink('settings', '⚙️', 'Settings',    $curPage) ?>
+ 
+    <?= navLink('sms', '📱', 'SMS', $curPage) ?>
   </div>
   <?php endif ?>
 

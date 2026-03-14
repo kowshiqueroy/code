@@ -2,13 +2,24 @@
 // ============================================================
 // modules/barcodes/barcodes.php — Professional Label Printer
 // ============================================================
-$products = dbFetchAll(
-    "SELECT p.id, p.product_id, p.name, p.description, c.name AS category_name, b.name AS brand_name
-     FROM products p LEFT JOIN categories c ON c.id = p.category_id LEFT JOIN brands b ON b.id = p.brand_id WHERE p.active = 1 ORDER BY p.name"
-);
+$productId = (int)($_GET['id'] ?? 0);
+if ($productId) {
+    $products = dbFetchAll(
+        "SELECT p.id, p.product_id, p.name, p.description, c.name AS category_name, b.name AS brand_name
+         FROM products p LEFT JOIN categories c ON c.id = p.category_id LEFT JOIN brands b ON b.id = p.brand_id
+         WHERE p.active = 1 AND p.id = ? ORDER BY p.name",
+        [$productId]
+    );
+} else {
+    $products = dbFetchAll(
+        "SELECT p.id, p.product_id, p.name, p.description, c.name AS category_name, b.name AS brand_name
+         FROM products p LEFT JOIN categories c ON c.id = p.category_id LEFT JOIN brands b ON b.id = p.brand_id
+         WHERE p.active = 1 ORDER BY p.name"
+    );
+}
 foreach ($products as &$p) {
     $p['variants'] = dbFetchAll(
-        'SELECT id, size, color, price,cost, quantity, barcode FROM product_variants WHERE product_id = ? ORDER BY id',
+        'SELECT id, size, color, price,regular, quantity, barcode FROM product_variants WHERE product_id = ? ORDER BY id',
         [$p['id']]
     );
 }
@@ -113,7 +124,7 @@ require_once BASE_PATH . '/includes/header.php';
                data-size="<?= e($v['size']??'') ?>"
                data-color="<?= e($v['color']??'') ?>"
                data-price="<?= $v['price'] ?>"
-                data-cost="<?= $v['cost'] ?>"
+                data-regular="<?= $v['regular'] ?>"
                data-stock="<?= $v['quantity'] ?>"
                data-barcode="<?= e($v['barcode']??'') ?>"
                onchange="renderLabels()">
@@ -125,7 +136,7 @@ require_once BASE_PATH . '/includes/header.php';
           </div>
        
           <div class="text-muted" style="font-size:0.75rem;">
-            <?= e($v['size']??'') ?> <?= e($v['color']??'') ?> — <span style="color:var(--success); font-weight:bold;"><?= $cur . number_format($v['price'],2) ?></span><span style=" font-weight:bold;"></span> <?= $cur . number_format($v['cost'],2) ?></span>
+            <?= e($v['size']??'') ?> <?= e($v['color']??'') ?> — <span style="color:var(--success); font-weight:bold;"><?= $cur . number_format($v['price'],2) ?></span><span style=" font-weight:bold;"></span> <?= $cur . number_format($v['regular'],2) ?></span>
           </div>
          
         </div>
@@ -157,7 +168,7 @@ require_once BASE_PATH . '/includes/header.php';
 }
 .lbl-title { font-weight: bold; font-size: 12pt; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
 .lbl-meta  { font-size: 10pt; color: #333; }
-lbl-cost {
+lbl-regular {
   font-size: 10pt; font-weight: 700; margin-top: 0px;
   text-decoration: line-through; 
       }
@@ -215,7 +226,7 @@ function getChecked() {
       size: el.dataset.size, 
       color: el.dataset.color,
       price: el.dataset.price, 
-      cost: el.dataset.cost,
+      regular: el.dataset.regular,
       barcode: el.dataset.barcode,
       qty 
     };
@@ -336,9 +347,9 @@ function renderLabels() {
            if (v.brand) description.push(esc(v.brand));
            if (v.description) description.push(esc(v.description));
            if (description.length > 0) content += `<div class="lbl-meta">${description.join(' ')}</div>`;
-      if (parseFloat(v.price) < parseFloat(v.cost)) {
-        content += `<div class="lbl-cost">Regular: ${CURRENCY}${parseFloat(v.cost).toFixed(2)}</div>`;  
-        content += `<div class="lbl-discount">Discount: ${CURRENCY}${parseFloat(v.cost-v.price).toFixed(2)}</div>`;  
+      if (parseFloat(v.price) < parseFloat(v.regular)) {
+        content += `<div class="lbl-regular">Regular: ${CURRENCY}${parseFloat(v.regular).toFixed(2)}</div>`;  
+        content += `<div class="lbl-discount">Discount: ${CURRENCY}${parseFloat(v.regular-v.price).toFixed(2)}</div>`;  
       }
 
 

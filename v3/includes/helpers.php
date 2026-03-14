@@ -4,7 +4,7 @@
 // ============================================================
 
 // ── Action Logger ─────────────────────────────────────────────
-function logAction(string $action, string $module, ?int $recordId = null, string $note = ''): void {
+function logAction(string $action, string $module, ?float $recordId = null, string $note = ''): void {
     try {
         dbInsert('action_logs', [
             'user_id'   => $_SESSION['user_id'] ?? 0,
@@ -44,7 +44,8 @@ function getAllSettings(): array {
         'discount_max_amount'=>'0','discount_default'=>'0','product_discount_enabled'=>'0',
         'vat_enabled'=>'1','vat_default'=>'15','vat_inclusive'=>'0',
         'points_enabled'=>'1','points_earn_rate'=>'1','points_redeem_rate'=>'0.01',
-        'points_min_redeem'=>'0','points_max_redeem_pct'=>'100','currency_symbol'=>'$',
+        'points_min_redeem'=>'0','points_max_redeem_pct'=>'100',
+        'currency_symbol'=>'৳', 'api_key_sms' => '', 'sms_enabled' => '0', 'sms_balance' => '0',
     ];
     return $all;
 }

@@ -40,7 +40,7 @@ require_once BASE_PATH . '/includes/header.php';
 <div class="stats-grid">
   <div class="stat-card success">
     <div class="stat-label">Today's Revenue</div>
-    <div class="stat-value"><?= money($todaySales['rev']) ?></div>
+    <div class="stat-value">৳<?= $todaySales['rev'] ?></div>
   </div>
   <div class="stat-card accent">
     <div class="stat-label">Today's Sales</div>
@@ -48,11 +48,11 @@ require_once BASE_PATH . '/includes/header.php';
   </div>
   <div class="stat-card warning">
     <div class="stat-label">Month Revenue</div>
-    <div class="stat-value"><?= money($monthSales['rev']) ?></div>
+    <div class="stat-value">৳<?= $monthSales['rev'] ?></div>
   </div>
   <div class="stat-card <?= $balance >= 0 ? 'accent' : 'danger' ?>">
     <div class="stat-label">Month Balance</div>
-    <div class="stat-value"><?= money($balance) ?></div>
+    <div class="stat-value">৳<?= $balance ?></div>
   </div>
 </div>
 
@@ -102,7 +102,7 @@ require_once BASE_PATH . '/includes/header.php';
     <?php else: ?>
       <p class="text-muted">All products are well-stocked ✅</p>
     <?php endif ?>
-    <div class="mt-1"><a href="index.php?page=products" class="btn btn-ghost btn-sm">Manage Products →</a></div>
+    <div class="mt-1"><a href="index.php?page=inventory_report&low_stock=1" class="btn btn-ghost btn-sm">Manage Products →</a></div>
   </div>
 
 </div>

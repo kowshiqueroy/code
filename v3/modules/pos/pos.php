@@ -66,7 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'final
     $vatVal     = (float)($_POST['vat_val']       ?? 0);
     $pointsUsed = (int)($_POST['points_used']     ?? 0);
     $notes      = trim($_POST['notes']            ?? '');
-    // $sms        = isset($_POST['sms']) ? 1 : 0; // For potential SMS receipt feature
+    $sms        = isset($_POST['sms']) ? 1 : 0; // For potential SMS receipt feature
+ 
+  
 
     $payMethods = (array)($_POST['payment_methods'] ?? ['cash']);
     $payMethods = array_values(array_filter($payMethods, fn($m) => in_array($m, ['cash','card','transfer'])));
@@ -98,7 +100,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'final
     $invoiceNo  = generateInvoiceNo();
     $userId     = currentUser()['id'];
 
-    db()->beginTransaction();
+    $recentSale = dbFetch("SELECT id FROM sales WHERE user_id = ? AND created_at > DATE_SUB(NOW(), INTERVAL 20 SECOND) LIMIT 1", [$userId]);
+    if ($recentSale) {
+        flash('error', 'You made a sale within the last 20 seconds. Please wait before making another sale.');
+        redirect('pos');
+    } else {
+        db()->beginTransaction();
+    }
     try {
         $saleId = dbInsert('sales', [
             'invoice_no'      => $invoiceNo,
@@ -156,8 +164,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'final
         logAction('SALE', 'pos', $saleId, "Invoice $invoiceNo — $status");
         if ($status === 'completed')
           {
-            // if ($sms) sendSMS($customerPhone, "Thank you for your purchase! Invoice: $invoiceNo, Total: $cur$total"); 
-            // sms api integration can be added here in the future using the $sms variable to check if the option was selected
+            //if SMS option is selected, send SMS receipt to customer and number starts with 01 and 11 digits long (Bangladeshi phone number format)
+            if ($sms && $S['api_key_sms']!= '' && $S['sms_enabled'] === '1' && preg_match('/^01\d{9}$/', $customerPhone)) {
+                 $points = dbFetch('SELECT points FROM customers WHERE id = ?', [$customerId])['points'] ?? 0;
+$url = 'https://api.sms.net.bd/sendsms';
+$params = [
+    'api_key' => $S['api_key_sms'],
+   'msg' => 'Thank you for shopping at ' . $S['shop_name']   .
+         ' Total: ' . $total . ' BDT ' .
+         '' . (intval($points) > 0 ? ' Got ' . $points . ' Points ' : '').
+         ' Contact: ' . ($S['shop_phone'] ?? ''),
+    'to'      => $customerPhone, 
+];
+
+function request($url, $params) {
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $response = curl_exec($ch);
+    curl_close($ch);
+    return $response;
+}
+
+
+//make demo response for testing without actually sending SMS
+
+//if sms balance is less than 1, simulate an error response
+if (($S['sms_balance'] ?? 0) < 1) {
+    $response = [
+        'error' => 1,
+        'msg' => 'Insufficient SMS balance',
+    ];
+} else {
+$response = json_decode(request($url, $params), true);
+// $response = [
+//     'error' => 0,
+//     'msg' => 'SMS sent successfully',
+//     'data' => [
+//         'request_id' => 'abc123'
+//     ]
+// ];
+}
+
+
+if (isset($response['error']) && $response['error'] === 0) {
+    // SMS accepted by API
+    $requestId = $response['data']['request_id'] ?? null;
+    $rate = strlen($params['msg']) <= 160 ? 1 : ceil(strlen($params['msg']) / 160);
+
+
+    logAction('SINGLE_SMS', 'SMS', $rate, "To: $params[to] | Msg: $params[msg]");
+
+    $currentBalance = dbFetch('SELECT value FROM settings WHERE `key` = ?', ['sms_balance'])['value'] ?? 0;
+    dbQuery('UPDATE settings SET value = value - ? WHERE `key` = ?', [$rate, 'sms_balance']);
+    // Update balance in settings
+    
+
+    // Optional: check delivery report later (not immediately)
+    /*
+    $reportUrl = 'https://api.sms.net.bd/report/request/' . $requestId;
+    $reportParams = ['api_key' => '64v0VK2aq7AddQlE40Oh4T4oXpkgL3VBXxlc4W6l'];
+    $reportResponse = json_decode(request($reportUrl, $reportParams), true);
+    if (isset($reportResponse['error']) && $reportResponse['error'] === 0) {
+        logAction('SMS', 'pos', $saleId, 'Delivery report: ' . $reportResponse['data']['status']);
+    } else {
+        logAction('SMS', 'pos', $saleId, 'Error fetching report: ' . $reportResponse['msg']);
+    }
+    */
+} else {
+    logAction('SINGLE_SMS', 'SMS', 1, 'Error sending SMS: ' . ($response['msg'] ?? 'Unknown error'));
+}
+            }
+       
+
  redirect('invoice', ['id' => $saleId]);
           }
          
@@ -558,8 +638,7 @@ body, html {
         <?php endforeach ?>
       </select>
 
-      <input type="text" id="barcodeInput" class="pos-input" placeholder="||| Barcode" 
-             onkeydown="if(event.key==='Enter'){searchByBarcode(this.value);this.value=''}">
+<input type="text" id="barcodeInput" class="pos-input" placeholder="||| Barcode">
     </div>
     
     <div class="product-grid" id="productGrid">
@@ -599,7 +678,7 @@ body, html {
       <div class="checkout-section">
         <label class="compact-label">Customer Details</label>
         <div style="display:flex; gap:6px; margin-bottom: 6px;">
-          <input type="text" id="customerPhone" class="pos-input-sm" placeholder="Phone..." onblur="lookupCustomer(this.value)" style="flex:1">
+          <input type="text" id="customerPhone" class="pos-input-sm" placeholder="Phone" onblur="lookupCustomer(this.value)" style="flex:1" >
           <input type="text" id="customerName" class="pos-input-sm" placeholder="Name..." style="flex:1.5">
         </div>
         <input type="hidden" id="customerId">
@@ -696,7 +775,7 @@ body, html {
         <div style="display:flex; gap:6px;">
           <label class="pay-opt-wrap">
             <input type="checkbox" name="sms" class="pay-check" style="display:none;" onchange="this.closest('.pay-opt-wrap').classList.toggle('pay-selected',this.checked)" checked>
-            <span class="pay-opt">SMS</span>
+            <span class="pay-opt" style="font-size:10px;"><?= intval($S['sms_balance']) ?> SMS</span>
           </label>
           <button type="submit" name="submit_type" value="draft" class="btn-action-sm" style="background:#f39c12; flex:1;" onclick="return processCheckout()">📋 Draft</button>
           <button type="submit" name="submit_type" value="complete" class="btn-action-sm" style="background:var(--pos-success); flex:2;" onclick="return processCheckout()">✅ Finalize</button>
@@ -719,6 +798,8 @@ body, html {
 </div>
 
 <script>
+
+
 // ============================================================================
 // 1. CONFIGURATION
 // ============================================================================
@@ -929,11 +1010,64 @@ function searchByBarcode(bc) {
   fetch(`?page=pos&action=barcode_lookup&barcode=${encodeURIComponent(bc)}`)
     .then(r => r.json())
     .then(data => {
-      if (data.variant_id) Cart.add(data);
-      else alert("Barcode not found or out of stock.");
+      if (data.variant_id) {
+        Cart.add(data);
+      } else {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.id = 'toastContainer';
+        toast.role = 'alert';
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        toast.setAttribute('data-bs-autohide', 'true');
+        toast.setAttribute('data-bs-delay', '3000');
+
+        toast.style.position = 'fixed';
+        toast.style.bottom = '10px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.backgroundColor = '#fff';
+        toast.style.borderRadius = '5px';
+        toast.style.padding = '10px';
+
+        toast.innerHTML = `
+          <div class="toast-body">
+            Barcode not found or out of stock.
+          </div>
+        `;
+
+        document.body.appendChild(toast);
+
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+
+       
+      }
     });
 }
 
+
+
+
+const input = document.getElementById('barcodeInput');
+let timer;
+
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    searchByBarcode(input.value);
+    input.value = '';
+  }
+});
+
+input.addEventListener('input', () => {
+  clearTimeout(timer);
+  timer = setTimeout(() => {
+    if (input.value.trim() !== '') {
+      searchByBarcode(input.value);
+      input.value = '';
+    }
+  }, 3000);
+});
 // Validation & Submissions
 function liveValidatePoints() {
   const el = document.getElementById('pointsUsed');
@@ -1010,6 +1144,17 @@ function processCheckout() {
 
   document.getElementById('hdCustomerId').value    = document.getElementById('customerId')?.value || '';
   document.getElementById('hdCustomerPhone').value = document.getElementById('customerPhone')?.value || '';
+  //if customer phone is entered but not start with 01 and total 11 digit then dont allow to submit the form and show an alert message
+  const phoneEl = document.getElementById('customerPhone');
+  if (phoneEl && phoneEl.value.trim() !== '') {
+    const phoneVal = phoneEl.value.trim();
+    const phonePattern = /^01\d{9}$/;
+    if (!phonePattern.test(phoneVal)) {
+      alert("Please enter a valid phone number starting with '01' and 11 digits long.");
+      phoneEl.focus();
+      return false;
+    }
+  }
   document.getElementById('hdCustomerName').value  = document.getElementById('customerName')?.value || '';
   
   document.getElementById('hdDiscType').value      = document.getElementById('discountType')?.value || 'percent';
@@ -1091,6 +1236,46 @@ document.querySelectorAll('.nav-link').forEach(link => {
   if(cFilter) cFilter.addEventListener('change', filterProducts);
   if(bFilter) bFilter.addEventListener('change', filterProducts);
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  const discTypeEl = document.getElementById('discountType');
+  const vatTypeEl = document.getElementById('vatType');
+
+  discTypeEl.value = localStorage.getItem('discountType') || discTypeEl.value;
+  vatTypeEl.value = localStorage.getItem('vatType') || vatTypeEl.value;
+
+  discTypeEl.addEventListener('change', () => localStorage.setItem('discountType', discTypeEl.value));
+  vatTypeEl.addEventListener('change', () => localStorage.setItem('vatType', vatTypeEl.value));
+});
+
+//on type enter on the keyboard go  to customerPhone to customerName to notes and on notes enter submit the form
+document.addEventListener('keydown', function(e) {
+  const active = document.activeElement;
+  if (e.key === 'Enter') {
+    if (active.id === 'customerPhone') {
+      e.preventDefault();
+      document.getElementById('customerName').focus();
+    } else if (active.id === 'customerName') {
+      e.preventDefault();
+      document.querySelector('input[name="notes"]').focus();
+    } else if (active.name === 'notes') {
+      e.preventDefault();
+      document.querySelector('button[name="submit_type"][value="complete"]').click();
+    }
+  }
+});
+
+//default focus on the barcode input when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+  const barcodeInput = document.getElementById('barcodeInput');
+  if (barcodeInput) {
+    barcodeInput.focus();
+  }
+});
+
+
+
+
 </script>
 
 <?php require_once BASE_PATH . '/includes/footer.php'; ?>

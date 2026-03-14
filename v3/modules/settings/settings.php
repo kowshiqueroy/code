@@ -17,7 +17,7 @@ function getSettings(): array {
         'discount_max_amount'=>'0','discount_default'=>'0','product_discount_enabled'=>'0',
         'vat_enabled'=>'1','vat_default'=>'15','vat_inclusive'=>'0',
         'points_enabled'=>'1','points_earn_rate'=>'1','points_redeem_rate'=>'0.01',
-        'points_min_redeem'=>'0','points_max_redeem_pct'=>'100','currency_symbol'=>'$',
+        'points_min_redeem'=>'0','points_max_redeem_pct'=>'100','currency_symbol'=>'৳', 'api_key_sms' => '', 'sms_enabled' => '0', 'sms_balance' => '0',
     ];
     return $cache;
 }
@@ -47,7 +47,18 @@ if ($action === 'save_settings') {
         'points_redeem_rate'=>(float)($_POST['points_redeem_rate']??0.01),
         'points_min_redeem'=>(int)($_POST['points_min_redeem']??0),
         'points_max_redeem_pct'=>(float)($_POST['points_max_redeem_pct']??100),
+       
+        'sms_enabled'=>isset($_POST['sms_enabled'])?'1':'0',
+        'sms_balance'=>(int)(isset($_POST['sms_balance']) ? $_POST['sms_balance'] : getSetting('sms_balance', 0)),
     ];
+
+      // Only update API key if a new value is provided (don't overwrite with empty)
+    if (!empty($_POST['api_key_sms'])) {
+        $fields['api_key_sms'] = trim($_POST['api_key_sms']);
+    } else {
+        // If empty, keep existing value (don't change)
+        $fields['api_key_sms'] = getSetting('api_key_sms', '');
+    }
     foreach ($fields as $key => $value) {
         $existing = dbFetch('SELECT id FROM settings WHERE `key` = ?', [$key]);
         if ($existing) { dbUpdate('settings', ['value'=>$value], '`key` = ?', [$key]); }
@@ -87,7 +98,7 @@ require_once BASE_PATH . '/includes/header.php';
   <div class="form-row cols-2">
     <div class="form-group"><label class="form-label">Invoice Footer</label>
       <input type="text" name="invoice_footer" class="form-control" value="<?= e($S['invoice_footer']) ?>"></div>
-    <div class="form-group"><label class="form-label">Currency Symbol</label>
+    <div class="form-group"><label class="form-label">Currency Symbol ৳ </label>
       <input type="text" name="currency_symbol" class="form-control" style="max-width:80px" value="<?= e($S['currency_symbol']) ?>"></div>
   </div>
 </div>
@@ -148,6 +159,25 @@ require_once BASE_PATH . '/includes/header.php';
       <input type="number" name="points_max_redeem_pct" class="form-control" step="1" min="0" max="100" value="<?= e($S['points_max_redeem_pct']) ?>"></div>
   </div>
 </div>
+
+<div class="card mb-2">
+  <div class="card-title">📱 SMS</div>
+  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px;margin-bottom:8px">
+    <input type="checkbox" name="sms_enabled" value="1" <?= $S['sms_enabled']=='1'?'checked':'' ?>>
+    <span class="form-label" style="margin:0">Enable SMS Notifications</span></label>
+  <div class="form-row cols-2">
+    <div class="form-group"><label class="form-label">SMS API Key</label>
+      <input type="text" name="api_key_sms" class="form-control" placeholder="<?= e(isset($S['api_key_sms']) && $S['api_key_sms'] !== '' ? 'Leave empty to not change' : 'Not configured'); ?>">
+  </div>
+  <div class="form-group"><label class="form-label">SMS Balance</label>
+<input type="number" 
+       name="sms_balance" 
+       class="form-control" 
+       min="0" 
+       value="<?php echo isset($_GET['sms_balance']) && intval($_GET['sms_balance']) > 0 
+                    ? e($_GET['sms_balance'])+e($S['sms_balance']) 
+                    : e($S['sms_balance']); ?>" 
+       readonly></div>
 
 <button type="submit" class="btn btn-primary">💾 Save Settings</button>
 </form>

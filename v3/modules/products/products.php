@@ -35,6 +35,7 @@ if ($action === 'save_product' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $sizes         = $_POST['variant_size']  ?? [];
     $colors        = $_POST['variant_color'] ?? [];
     $costs         = $_POST['variant_cost']  ?? [];
+    $regulars      = $_POST['variant_regular']  ?? [];
     $prices        = $_POST['variant_price'] ?? [];
     $quantities    = $_POST['variant_qty']   ?? [];
 
@@ -54,6 +55,7 @@ if ($action === 'save_product' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         'size'       => trim($size),
         'color'      => trim($colors[$i] ?? ''),
         'cost'       => (float)($costs[$i] ?? 0),
+        'regular'       => (float)($regulars[$i] ?? 0),
         'price'      => (float)($prices[$i] ?? 0),
         'quantity'   => (int)($quantities[$i] ?? 0),
     ];
@@ -159,7 +161,7 @@ require_once BASE_PATH . '/includes/header.php';
     <table>
       <thead>
         <tr>
-          <th>ID</th><th>Name</th><th>Category</th><th>Brand</th>
+          <th>ID</th><th>Name</th><th>Category</th><th>Brand</th><th>Serial</th>
           <th>Variants</th><th>Total Stock</th><th>Actions</th>
         </tr>
       </thead>
@@ -176,11 +178,14 @@ require_once BASE_PATH . '/includes/header.php';
           <td><strong><?= e($p['name']) ?></strong></td>
           <td><?= e($p['category_name'] ?? '—') ?></td>
           <td><?= e($p['brand_name'] ?? '—') ?></td>
+          <td><?= e($p['description'] ?? '—') ?></td>
           <td><span class="badge badge-info"><?= $p['variant_count'] ?></span></td>
           <td><?= (int)$p['total_stock'] ?></td>
           <td>
+               <a href="index.php?page=barcodes&id=<?= $p['id'] ?>" class="btn btn-ghost btn-sm">🖨️ Print</a>
+                 <?php if (canDelete()): ?>
             <a href="index.php?page=products&edit=<?= $p['id'] ?>" class="btn btn-ghost btn-sm">✏️ Edit</a>
-            <?php if (canDelete()): ?>
+     
             <a href="index.php?page=products&action=delete&id=<?= $p['id'] ?>"
                class="btn btn-danger btn-sm"
                data-confirm="Delete this product and all variants?">🗑️</a>
@@ -210,7 +215,17 @@ require_once BASE_PATH . '/includes/header.php';
             <label class="form-label">Product Name *</label>
             <input type="text" name="name" class="form-control" required value="<?= e($editing['name'] ?? '') ?>">
           </div>
-           <div class="form-row cols-2">  
+           <div class="form-row cols-3"> 
+            
+                     <div class="form-group">
+            <label class="form-label">Category</label>
+            <select name="category_id" class="form-control">
+              <!-- <option value="">— None —</option> -->
+              <?php foreach ($categories as $c): ?>
+                <option value="<?= $c['id'] ?>" <?= ($editing['category_id'] ?? '') == $c['id'] ? 'selected' : '' ?>><?= e($c['name']) ?></option>
+              <?php endforeach ?>
+            </select>
+          </div>
           <div class="form-group">
             <label class="form-label">Brand</label>
             <select name="brand_id" class="form-control">
@@ -220,22 +235,16 @@ require_once BASE_PATH . '/includes/header.php';
               <?php endforeach ?>
             </select>
           </div>
-          <div class="form-group">
-            <label class="form-label">Category</label>
-            <select name="category_id" class="form-control">
-              <!-- <option value="">— None —</option> -->
-              <?php foreach ($categories as $c): ?>
-                <option value="<?= $c['id'] ?>" <?= ($editing['category_id'] ?? '') == $c['id'] ? 'selected' : '' ?>><?= e($c['name']) ?></option>
-              <?php endforeach ?>
-            </select>
-          </div>
+
+
+                 <div class="form-group">
+          <label class="form-label">Serial</label>
+          <input type="text" name="description" class="form-control" value="<?= e($editing['description'] ?? '') ?>">
+        </div>
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Description</label>
-          <textarea name="description" class="form-control"><?= e($editing['description'] ?? '') ?></textarea>
-        </div>
+       
 
         <!-- ── Variants ─────────────────────────────────────── -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;margin-bottom:6px">
@@ -258,11 +267,17 @@ require_once BASE_PATH . '/includes/header.php';
               <input type="text" id="bulkColors" class="form-control" placeholder="Red, Blue, Black">
             </div>
           </div>
-          <div class="form-row cols-3" style="margin-bottom:8px">
+          <div class="form-row cols-2" style="margin-bottom:8px">
             <div class="form-group" style="margin-bottom:0">
               <label class="form-label">Default Cost</label>
               <input type="number" id="bulkCost" class="form-control" step="0.01" value="0">
             </div>
+              <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Default Regular</label>
+              <input type="number" id="bulkRegular" class="form-control" step="0.01" value="0">
+            </div>
+            </div>
+              <div class="form-row cols-2" style="margin-bottom:8px">
             <div class="form-group" style="margin-bottom:0">
               <label class="form-label">Default Price</label>
               <input type="number" id="bulkPrice" class="form-control" step="0.01" value="0">
@@ -278,9 +293,9 @@ require_once BASE_PATH . '/includes/header.php';
 
         <div id="variantsContainer">
           <?php
-          $initVars = $editVars ?: [['id'=>'','size'=>'','color'=>'','cost'=>'','price'=>'','quantity'=>'']];
+          $initVars = $editVars ?: [['id'=>'','size'=>'','color'=>'','cost'=>'', 'regular'=>'','price'=>'','quantity'=>'']];
           foreach ($initVars as $v): ?>
-          <div class="variant-row" style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:6px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;gap:6px;align-items:end">
+          <div class="variant-row" style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:6px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr auto;gap:6px;align-items:end">
             <input type="hidden" name="variant_id[]" value="<?= $v['id'] ?>">
             <div class="form-group" style="margin-bottom:0">
               <label class="form-label">Size</label>
@@ -293,6 +308,10 @@ require_once BASE_PATH . '/includes/header.php';
             <div class="form-group" style="margin-bottom:0">
               <label class="form-label">Cost</label>
               <input type="number" name="variant_cost[]" class="form-control" step="0.01" min="0" value="<?= $v['cost']??0 ?>">
+            </div>
+             <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Regular</label>
+              <input type="number" name="variant_regular[]" class="form-control" step="0.01" min="0" value="<?= $v['regular']??0 ?>">
             </div>
             <div class="form-group" style="margin-bottom:0">
               <label class="form-label">Price *</label>
@@ -326,8 +345,8 @@ require_once BASE_PATH . '/includes/header.php';
 </div>
 
 <script>
-function variantRowHtml(size='', color='', cost='0', price='0', qty='0') {
-  return `<div class="variant-row" style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:6px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;gap:6px;align-items:end">
+function variantRowHtml(size='', color='', cost='0', regular='0', price='0', qty='0') {
+  return `<div class="variant-row" style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:6px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr auto;gap:6px;align-items:end">
     <input type="hidden" name="variant_id[]" value="">
     <div class="form-group" style="margin-bottom:0"><label class="form-label">Size</label>
       <input type="text" name="variant_size[]" class="form-control" value="${esc(size)}" list="sizeList"></div>
@@ -335,6 +354,8 @@ function variantRowHtml(size='', color='', cost='0', price='0', qty='0') {
       <input type="text" name="variant_color[]" class="form-control" value="${esc(color)}" list="colorList"></div>
     <div class="form-group" style="margin-bottom:0"><label class="form-label">Cost</label>
       <input type="number" name="variant_cost[]" class="form-control" step="0.01" min="0" value="${cost}"></div>
+    <div class="form-group" style="margin-bottom:0"><label class="form-label">Regular</label>
+      <input type="number" name="variant_regular[]" class="form-control" step="0.01" min="0" value="${regular}"></div>
     <div class="form-group" style="margin-bottom:0"><label class="form-label">Price *</label>
       <input type="number" name="variant_price[]" class="form-control" step="0.01" min="0" required value="${price}"></div>
     <div class="form-group" style="margin-bottom:0"><label class="form-label">Qty</label>
@@ -355,6 +376,7 @@ function generateBulk() {
   const sizes  = document.getElementById('bulkSizes').value.split(',').map(s=>s.trim()).filter(Boolean);
   const colors = document.getElementById('bulkColors').value.split(',').map(s=>s.trim()).filter(Boolean);
   const cost   = document.getElementById('bulkCost').value;
+  const regular   = document.getElementById('bulkRegular').value;
   const price  = document.getElementById('bulkPrice').value;
   const qty    = document.getElementById('bulkQty').value;
 
@@ -365,7 +387,7 @@ function generateBulk() {
   const container = document.getElementById('variantsContainer');
 
   sArr.forEach(s => cArr.forEach(c => {
-    container.insertAdjacentHTML('beforeend', variantRowHtml(s, c, cost, price, qty));
+    container.insertAdjacentHTML('beforeend', variantRowHtml(s, c, cost,regular, price, qty));
   }));
   document.getElementById('bulkAddPanel').style.display = 'none';
   //remove empty rows
