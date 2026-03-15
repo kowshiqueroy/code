@@ -214,11 +214,31 @@ function handleUpload(string $fieldName, string $folder = 'general', string $mod
         ]);
 
         return ['success' => true, 'filename' => $filename, 'sizes' => $sizes, 'media_id' => $pdo->lastInsertId()];
-    } else {
-        $docDest = $destDir . $filename;
-        move_uploaded_file($file['tmp_name'], $docDest);
-        return ['success' => true, 'filename' => $filename, 'path' => 'documents/' . $filename];
-    }
+} else {
+    $docDest = $destDir . $filename;
+    move_uploaded_file($file['tmp_name'], $docDest);
+
+    // Save to media library
+    $pdo = getDB();
+    $stmt = $pdo->prepare("INSERT INTO media 
+        (filename, original_name, mime_type, file_size, folder, uploaded_by) 
+        VALUES (?,?,?,?,?,?)");
+    $stmt->execute([
+        $filename,
+        $file['name'],
+        $mime,
+        $file['size'],
+        $folder,
+        $_SESSION['user_id'] ?? 0
+    ]);
+
+    return [
+        'success' => true,
+        'filename' => $filename,
+        'path' => 'documents/' . $filename,
+        'media_id' => $pdo->lastInsertId()
+    ];
+}
 }
 
 function imgUrl(string $path, string $size = 'medium'): string {

@@ -83,12 +83,12 @@ function sv(string $key, string $default = ''): string {
         <div class="form-group">
           <label>Logo <span class="hint">(Recommended: transparent PNG, at least 200px height)</span></label>
           <input type="file" name="logo" accept="image/*" data-preview="logo_preview">
-          <?php if (sv('logo')): ?><img id="logo_preview" src="<?= h(imgUrl(($s['logo']??''),'medium')) ?>" style="height:60px;margin-top:8px;border-radius:6px;border:1px solid var(--border)"><?php else: ?><img id="logo_preview" src="" style="display:none;height:60px;margin-top:8px"><?php endif; ?>
+          <?php if (sv('logo')): ?><img id="logo_preview" src="<?php echo "../uploads/images/" . $s['logo'] ; ?>" style="height:60px;margin-top:8px;border-radius:6px;border:1px solid var(--border)"><?php else: ?><img id="logo_preview" src="" style="display:none;height:60px;margin-top:8px"><?php endif; ?>
         </div>
         <div class="form-group">
           <label>Favicon</label>
           <input type="file" name="favicon" accept="image/*" data-preview="favicon_preview">
-          <?php if (sv('favicon')): ?><img id="favicon_preview" src="<?= h(imgUrl(($s['favicon']??''),'thumb')) ?>" style="width:32px;height:32px;margin-top:8px"><?php else: ?><img id="favicon_preview" src="" style="display:none;width:32px;height:32px;margin-top:8px"><?php endif; ?>
+          <?php if (sv('favicon')): ?><img id="favicon_preview" src="<?php echo "../uploads/images/" . $s['favicon'] ; ?>" style="width:32px;height:32px;margin-top:8px"><?php else: ?><img id="favicon_preview" src="" style="display:none;width:32px;height:32px;margin-top:8px"><?php endif; ?>
         </div>
         <div class="form-group">
           <label>Primary Color</label>

@@ -23,7 +23,7 @@ define('IMG_PORTRAIT', ['w' => 300, 'h' => 300]); // staff/teacher photos 1:1
 
 // Session
 define('SESSION_NAME', 'school_admin_sess');
-define('ADMIN_PATH', BASE_URL . '/admin');
+define('ADMIN_PATH', BASE_URL . '');
 
 // Timezone
 date_default_timezone_set('Asia/Dhaka');

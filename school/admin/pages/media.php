@@ -20,20 +20,38 @@ $stmt=$db->prepare("SELECT * FROM media ORDER BY created_at DESC LIMIT $limit OF
 </form>
 </div><div class="acard-body">
 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px">
-<?php foreach($media as $m):?>
+<?php foreach($media as $m): ?>
+<?php 
+    $isImage = str_contains($m['mime_type'] ?? '', 'image');
+    // Decide folder based on type
+    $folder  = $isImage ? 'images' : 'documents';
+    $fileUrl = "../uploads/$folder/" . $m['filename'];
+?>
 <div style="background:#f8f8f8;border-radius:8px;overflow:hidden;border:1.5px solid var(--border);position:relative">
-<?php if(str_contains($m['mime_type']??'','image')):?>
-<img src="<?= h(imgUrl($m['filename'],'thumb'))?>" style="width:100%;aspect-ratio:1;object-fit:cover">
-<?php else:?>
-<div style="width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:#e8f5f0">📄</div>
-<?php endif;?>
-<div style="padding:6px 8px"><p style="font-size:.72rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#666" title="<?= h($m['original_name']??$m['filename'])?>"><?= h(mb_substr($m['original_name']??$m['filename'],0,20))?></p>
-<div style="display:flex;gap:4px;margin-top:4px">
-<button class="btn btn-xs btn-light" onclick="copyUrl('<?= h(UPLOAD_URL.'images/'.$m['filename'])?>',this)" title="Copy URL">📋</button>
-<a href="?section=media&action=delete&id=<?= $m['id']?>" class="btn btn-xs btn-danger" data-confirm="Delete?">🗑️</a>
-</div></div>
-</div>
-<?php endforeach;?>
+    <?php if($isImage): ?>
+        <img src="<?= $fileUrl ?>" 
+             style="width:100%;aspect-ratio:1;object-fit:cover">
+    <?php else: ?>
+        <a href="<?= $fileUrl ?>" target="_blank"
+           style="width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:#e8f5f0;text-decoration:none">
+           📄
+        </a>
+    <?php endif; ?>
+    <div style="padding:6px 8px">
+        <p style="font-size:.72rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#666"
+           title="<?= h($m['original_name'] ?? $m['filename']) ?>">
+           <?= h(mb_substr($m['original_name'] ?? $m['filename'],0,20)) ?>
+        </p>
+        <div style="display:flex;gap:4px;margin-top:4px">
+            <button class="btn btn-xs btn-light" 
+                    onclick="copyUrl('<?= '/uploads/'.$folder.'/'.$m['filename']; ?>', this)" 
+                    title="Copy URL">📋</button>
+            <a href="?section=media&action=delete&id=<?= $m['id']?>" 
+               class="btn btn-xs btn-danger" data-confirm="Delete?">🗑️</a>
+        </div>
+    </div>
+</div> dkhfsdh
+<?php endforeach; ?>
 <?php if(!$media):?><p style="grid-column:1/-1;text-align:center;color:#999;padding:40px">No media files yet.</p><?php endif;?>
 </div>
 <?php if($pages>1):?><div class="apagination" style="margin-top:20px"><?php for($i=1;$i<=$pages;$i++):?><a href="?section=media&paged=<?= $i?>" class="apage-link <?= $paged===$i?'active':''?>"><?= $i?></a><?php endfor;?></div><?php endif;?>
