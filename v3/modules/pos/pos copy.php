@@ -261,37 +261,6 @@ $products   = dbFetchAll(
      FROM products p LEFT JOIN product_variants v ON v.product_id = p.id
      WHERE p.active = 1 GROUP BY p.id ORDER BY p.name"
 );
-
-// ── Load Existing Sale Data (If ID is provided) ─────────────────
-$loadSaleData = null;
-if (!empty($_GET['id'])) {
-    $saleId = (int)$_GET['id'];
-    $sale = dbFetch('SELECT * FROM sales WHERE id = ?', [$saleId]);
-    
-    if ($sale) {
-        // Fetch Customer details if available
-        if ($sale['customer_id']) {
-            $customer = dbFetch('SELECT name, phone, points FROM customers WHERE id = ?', [$sale['customer_id']]);
-            if ($customer) {
-                $sale['customer_name'] = $customer['name'];
-                $sale['customer_phone'] = $customer['phone'];
-                $sale['customer_points'] = $customer['points'];
-            }
-        }
-        
-        // Fetch Cart Items
-        $items = dbFetchAll(
-            'SELECT si.*, v.quantity AS max_qty, v.barcode 
-             FROM sale_items si 
-             LEFT JOIN product_variants v ON v.id = si.variant_id 
-             WHERE si.sale_id = ?', 
-            [$saleId]
-        );
-        $sale['items'] = $items;
-        $loadSaleData = $sale;
-    }
-}
-
 $discEnabled  = $S['discount_enabled']  == '1';
 $vatEnabled   = $S['vat_enabled']       == '1';
 $pointsEnabled= $S['points_enabled']    == '1';
@@ -830,6 +799,7 @@ body, html {
 
 <script>
 
+
 // ============================================================================
 // 1. CONFIGURATION
 // ============================================================================
@@ -839,9 +809,6 @@ const POINTS_MIN     = <?= (int)($S['points_min_redeem']??0) ?>;
 const MAX_REDEEM_PCT = <?= (float)($S['points_max_redeem_pct']??100) ?>;
 const DISC_MAX_PCT   = <?= (float)($S['discount_max_percent']??100) ?>;
 const DISC_MAX_AMT   = <?= (float)($S['discount_max_amount']??999999) ?>;
-
-// Inject Load Sale Data (If present)
-const loadedSale = <?= $loadSaleData ? json_encode($loadSaleData) : 'null' ?>;
 
 // ============================================================================
 // 2. THE CART ENGINE
@@ -862,8 +829,8 @@ const Cart = {
         variant_id: variant.variant_id,
         name: variant.name,
         price: parseFloat(variant.price),
-        qty: parseInt(variant.qty) || 1, // Accounts for pre-loaded quantity
-        max_qty: parseInt(variant.max_qty || variant.quantity),
+        qty: 1,
+        max_qty: parseInt(variant.quantity),
         size: variant.size,
         color: variant.color
       });
@@ -963,7 +930,7 @@ function lookupCustomer(phone) {
     liveValidatePoints();
     return;
   }
-  fetch(`?page=pos_edit&action=lookup_customer&phone=${encodeURIComponent(phone)}`)
+  fetch(`?page=pos&action=lookup_customer&phone=${encodeURIComponent(phone)}`)
     .then(r => r.json())
     .then(data => {
       if (data.id) {
@@ -979,7 +946,7 @@ function lookupCustomer(phone) {
 }
 
 function fetchVariantsAndAdd(productId) {
-  fetch(`?page=pos_edit&action=get_variants&product_id=${productId}`)
+  fetch(`?page=pos&action=get_variants&product_id=${productId}`)
     .then(r => r.json())
     .then(data => {
       if(data.length === 0) {
@@ -1040,7 +1007,7 @@ document.getElementById('variantModalOverlay').addEventListener('click', functio
 });
 
 function searchByBarcode(bc) {
-  fetch(`?page=pos_edit&action=barcode_lookup&barcode=${encodeURIComponent(bc)}`)
+  fetch(`?page=pos&action=barcode_lookup&barcode=${encodeURIComponent(bc)}`)
     .then(r => r.json())
     .then(data => {
       if (data.variant_id) {
@@ -1211,73 +1178,8 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
   });
-
-  // Check if there is data to preload
-  if (loadedSale) {
-    if (loadedSale.items && loadedSale.items.length > 0) {
-      loadedSale.items.forEach(item => {
-        Cart.add({
-          variant_id: item.variant_id,
-          name: item.product_name,
-          price: item.unit_price,
-          qty: item.qty,
-          max_qty: item.max_qty || item.qty,
-          size: item.size || '',
-          color: item.color || ''
-        });
-      });
-    }
-
-    if (loadedSale.customer_id) {
-      document.getElementById('customerId').value = loadedSale.customer_id;
-      document.getElementById('customerPhone').value = loadedSale.customer_phone || '';
-      document.getElementById('customerName').value = loadedSale.customer_name || '';
-      const ptsBadge = document.getElementById('pointsBadge');
-      if (ptsBadge) ptsBadge.textContent = loadedSale.customer_points || 0;
-    }
-
-    if (loadedSale.points_used > 0) {
-      const pToggle = document.getElementById('usePointsToggle');
-      const pInput = document.getElementById('pointsUsed');
-      if (pToggle && pInput) {
-        pToggle.checked = true;
-        togglePoints(true);
-        pInput.value = loadedSale.points_used;
-      }
-    }
-
-    const dType = document.getElementById('discountType');
-    const dPct = document.getElementById('discountPct');
-    if (dType && dPct) {
-      if (parseFloat(loadedSale.discount_pct) > 0) {
-        dType.value = 'percent';
-        dPct.value = parseFloat(loadedSale.discount_pct);
-      } else if (parseFloat(loadedSale.discount_amount) > 0) {
-        dType.value = 'amount';
-        dPct.value = parseFloat(loadedSale.discount_amount);
-      }
-    }
-
-    const vType = document.getElementById('vatType');
-    const vRate = document.getElementById('vatRate');
-    if (vType && vRate) {
-      if (parseFloat(loadedSale.vat_rate) > 0) {
-        vType.value = 'percent';
-        vRate.value = parseFloat(loadedSale.vat_rate);
-      } else if (parseFloat(loadedSale.vat_amount) > 0) {
-        vType.value = 'amount';
-        vRate.value = parseFloat(loadedSale.vat_amount);
-      }
-    }
-
-    const notesInput = document.querySelector('input[name="notes"]');
-    if (notesInput) {
-      notesInput.value = loadedSale.notes || '';
-    }
-  }
-
+  
   Cart.render();
-
 const navToggle  = document.getElementById('navToggle');
 const sideNav    = document.getElementById('sideNav');
 const navOverlay = document.getElementById('navOverlay');
@@ -1371,5 +1273,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+
+
+
 </script>
+
 <?php require_once BASE_PATH . '/includes/footer.php'; ?>

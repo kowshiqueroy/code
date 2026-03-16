@@ -230,7 +230,13 @@ require_once BASE_PATH . '/includes/header.php';
         <span style="font-size: 2.5rem;">📱</span>
         <div>
             <h4 style="margin:0; color:var(--text-muted)">Total SMS Sent</h4>
-            <h2 style="margin:0; color:var(--primary)"><?= number_format($lifetimeStats['qty'] ?? 0) ?> / ৳<?= number_format($lifetimeStats['cost'] / $lifetimeStats['qty'] ?? 0, 2) ?></h2>
+            <h2 style="margin:0; color:var(--primary)">
+                <?php if ($lifetimeStats['qty'] ?? 0 > 0): ?>
+                    <?= number_format($lifetimeStats['qty'] ?? 0) ?> / ৳<?= number_format($lifetimeStats['cost'] / $lifetimeStats['qty'], 2) ?>
+                <?php else: ?>
+                    N/A
+                <?php endif; ?>
+            </h2>
         </div>
     </div>
     <div class="card d-flex align-center justify-center gap-3" style="padding: 20px;">

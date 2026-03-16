@@ -47,32 +47,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         
 
-        CREATE TABLE IF NOT EXISTS products (
-            id          INT AUTO_INCREMENT PRIMARY KEY,
-            product_id  VARCHAR(20)  NOT NULL UNIQUE,
-            category_id INT,
-            brand_id    INT,
-            name        VARCHAR(200) NOT NULL,
-            description TEXT,
-            active      TINYINT(1) NOT NULL DEFAULT 1,
-            created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
-            FOREIGN KEY (brand_id) REFERENCES brands(id) ON DELETE SET NULL
-        );
+       CREATE TABLE IF NOT EXISTS products (
+        id          INT AUTO_INCREMENT PRIMARY KEY,
+        product_id  VARCHAR(20)  NOT NULL UNIQUE,
+        category_id INT,
+        brand_id    INT,
+        name        VARCHAR(200) NOT NULL,
+        description TEXT,
+        memo_number VARCHAR(100),
+        memo_date   DATE,
+        notes       TEXT,
+        active      TINYINT(1) NOT NULL DEFAULT 1,
+        created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
+        FOREIGN KEY (brand_id) REFERENCES brands(id) ON DELETE SET NULL
+    );
 
-        CREATE TABLE IF NOT EXISTS product_variants (
-            id          INT AUTO_INCREMENT PRIMARY KEY,
-            product_id  INT NOT NULL,
-            size        VARCHAR(50),
-            color       VARCHAR(50), 
-            cost        DECIMAL(12,2) NOT NULL DEFAULT 0,
-            regular        DECIMAL(12,2) NOT NULL DEFAULT 0,
-            price       DECIMAL(12,2) NOT NULL DEFAULT 0,
-            quantity    INT NOT NULL DEFAULT 0,
-            barcode     VARCHAR(50)  UNIQUE,
-            created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
-        );
+
+CREATE TABLE IF NOT EXISTS product_variants (
+        id           INT AUTO_INCREMENT PRIMARY KEY,
+        product_id   INT NOT NULL,
+        variant_name VARCHAR(100),
+        size         VARCHAR(50),
+        color        VARCHAR(50), 
+        cost         DECIMAL(12,2) NOT NULL DEFAULT 0,
+        regular      DECIMAL(12,2) NOT NULL DEFAULT 0,
+        price        DECIMAL(12,2) NOT NULL DEFAULT 0,
+        quantity     INT NOT NULL DEFAULT 0,
+        barcode      VARCHAR(50)  UNIQUE,
+        created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    );
 
         CREATE TABLE IF NOT EXISTS customers (
             id          INT AUTO_INCREMENT PRIMARY KEY,
@@ -109,6 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             sale_id         INT NOT NULL,
             variant_id      INT NOT NULL,
             product_name    VARCHAR(200),
+            notes           TEXT,
             size            VARCHAR(50),
             color           VARCHAR(50),
             qty             INT NOT NULL DEFAULT 1,
@@ -141,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             user_id     INT,
             action      VARCHAR(60)  NOT NULL,
             module      VARCHAR(60)  NOT NULL,
-            record_id   FLOAT(11,2)    NOT NULL,
+            record_id   FLOAT(11,2),
             note        TEXT,
             ip          VARCHAR(45),
             created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
