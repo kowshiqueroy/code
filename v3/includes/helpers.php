@@ -126,3 +126,12 @@ function paginate(string $sql, array $params, int $page, int $perPage = 20): arr
         'last_page'  => max(1, (int) ceil($total / $perPage)),
     ];
 }
+ function sendHttpPost(string $url, array $data): string {
+                $ch = curl_init($url);
+                curl_setopt($ch, CURLOPT_POST, 1);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                $response = curl_exec($ch);
+                curl_close($ch);
+                return $response;
+            }

@@ -23,26 +23,29 @@
 
 <script src="<?= BASE_URL ?>/assets/js/app.js"></script>
 <script>
-// Auto-redirect POS to offline page if network is lost
-window.addEventListener('offline', function() {
-  const page = new URLSearchParams(location.search).get('page');
-  if (page === 'pos') {
-    if (confirm('You appear to be offline. Switch to Offline POS?')) {
-      location.href = '<?= BASE_URL ?>/offline.php';
-    }
-  }
-});
+
 // Show offline banner on any page
 window.addEventListener('offline', function() {
   const bar = document.createElement('div');
   bar.id = 'offlineBanner';
-  bar.style.cssText = 'position:fixed;top:56px;left:0;right:0;z-index:999;background:#ef4444;color:#fff;text-align:center;padding:6px;font-size:.85rem;font-weight:700';
-  bar.innerHTML = '⚠️ You are offline — <a href="<?= BASE_URL ?>/offline.php" style="color:#fff;text-decoration:underline">Switch to Offline POS</a>';
+  bar.style.cssText = 'position:fixed;top:100px;left:0;right:0;z-index:999;background:#ef4444;color:#fff;text-align:center;padding:6px;font-size:5.85rem;font-weight:700';
+  bar.innerHTML = '⚠️ You are offline';
   document.body.appendChild(bar);
 });
 window.addEventListener('online', function() {
-  document.getElementById('offlineBanner')?.remove();
+  //change text of offline banner to "Back Online" green and then remove after 2 seconds
+  const offlineBanner = document.getElementById('offlineBanner');
+  if (offlineBanner) {
+    offlineBanner.style.background = '#10b981';
+    offlineBanner.innerHTML = '✅ Back online';
+
+    setTimeout(() => {
+      offlineBanner.remove();
+    }, 2000);
+  }
 });
+
+
 </script>
 <?php if (!empty($extraJs)): ?>
   <script><?= $extraJs ?></script>

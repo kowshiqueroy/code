@@ -4,12 +4,12 @@
 // ============================================================
 require_once __DIR__ . '/includes/bootstrap.php';
 
-if (isLoggedIn()) { redirect('dashboard'); }
+if (isLoggedIn()) { redirect('pos'); }
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (login(strtoupper(trim($_POST['username'] ?? '')), $_POST['password'] ?? '')) {
-        redirect('dashboard');
+        redirect('pos');
     }
     $error = 'Invalid username or password.';
 }

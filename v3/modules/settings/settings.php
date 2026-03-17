@@ -79,54 +79,81 @@ require_once BASE_PATH . '/includes/header.php';
 
 <div class="card mb-2">
   <div class="card-title">🏪 Shop / Invoice Information</div>
+
   <div class="form-row cols-2">
-    <div class="form-group"><label class="form-label">Shop Name</label>
-      <input type="text" name="shop_name" class="form-control" value="<?= e($S['shop_name']) ?>"></div>
-    <div class="form-group"><label class="form-label">Phone</label>
-      <input type="text" name="shop_phone" class="form-control" value="<?= e($S['shop_phone']) ?>"></div>
-    <div class="form-group"><label class="form-label">Email</label>
-      <input type="email" name="shop_email" class="form-control" value="<?= e($S['shop_email']) ?>"></div>
-    <div class="form-group"><label class="form-label">Tax/VAT No.</label>
-      <input type="text" name="shop_tax_no" class="form-control" value="<?= e($S['shop_tax_no']) ?>"></div>
+    <div class="form-group">
+      <label class="form-label">Shop Name</label>
+      <input type="text" name="shop_name" class="form-control" value="<?= e($S['shop_name']) ?>">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Address</label>
+      <input type="text" name="shop_address" class="form-control" value="<?= e($S['shop_address']) ?>">
+    </div>
+ 
   </div>
-  <div class="form-group"><label class="form-label">Address</label>
-    <textarea name="shop_address" class="form-control" rows="2"><?= e($S['shop_address']) ?></textarea></div>
-  <div class="form-group"><label class="form-label">Logo URL <small class="text-muted">(https:// link)</small></label>
-    <input type="url" name="shop_logo_url" class="form-control" value="<?= e($S['shop_logo_url']) ?>" placeholder="https://…/logo.png">
-    <?php if ($S['shop_logo_url']): ?><img src="<?= e($S['shop_logo_url']) ?>" style="max-height:50px;margin-top:6px;border-radius:4px"><?php endif ?>
+
+  <div class="form-row cols-3">
+    <div class="form-group">
+      <label class="form-label">Phone</label>
+      <input type="text" name="shop_phone" class="form-control" value="<?= e($S['shop_phone']) ?>">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input type="email" name="shop_email" class="form-control" value="<?= e($S['shop_email']) ?>">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Logo URL <small class="text-muted">(https://)</small></label>
+      <input type="url" name="shop_logo_url" class="form-control" value="<?= e($S['shop_logo_url']) ?>" placeholder="https://…/logo.png">
+      <?php if ($S['shop_logo_url']): ?>
+        <img src="<?= e($S['shop_logo_url']) ?>" style="max-height:30px; margin-top:6px; border-radius:4px; display:block;">
+      <?php endif ?>
+    </div>
   </div>
-  <div class="form-row cols-2">
-    <div class="form-group"><label class="form-label">Invoice Footer</label>
-      <input type="text" name="invoice_footer" class="form-control" value="<?= e($S['invoice_footer']) ?>"></div>
-    <div class="form-group"><label class="form-label">Currency Symbol ৳ </label>
-      <input type="text" name="currency_symbol" class="form-control" style="max-width:80px" value="<?= e($S['currency_symbol']) ?>"></div>
+
+  <div class="form-row cols-3">
+    <div class="form-group">
+      <label class="form-label">Invoice Footer</label>
+      <input type="text" name="invoice_footer" class="form-control" value="<?= e($S['invoice_footer']) ?>">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Currency Symbol (৳)</label>
+      <input type="text" name="currency_symbol" class="form-control"  value="<?= e($S['currency_symbol']) ?>">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tax/VAT No.</label>
+      <input type="text" name="shop_tax_no" class="form-control" value="<?= e($S['shop_tax_no']) ?>">
+    </div>
   </div>
+
 </div>
 
 <div class="card mb-2">
   <div class="card-title">🏷️ Discount Settings</div>
-  <div class="form-row cols-2">
+  <div class="form-row cols-3">
     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px">
       <input type="checkbox" name="discount_enabled" value="1" <?= $S['discount_enabled']=='1'?'checked':'' ?>>
       <span class="form-label" style="margin:0">Enable Discounts in POS</span></label>
     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px">
       <input type="checkbox" name="product_discount_enabled" value="1" <?= $S['product_discount_enabled']=='1'?'checked':'' ?>>
       <span class="form-label" style="margin:0">Allow Per-product Discount</span></label>
-  </div>
-  <div class="form-row cols-3">
-    <div class="form-group"><label class="form-label">Input Type</label>
+
+      <div class="form-group"><label class="form-label">Input Type</label>
       <select name="discount_type" class="form-control">
         <option value="percent" <?= $S['discount_type']==='percent'?'selected':'' ?>>Percent % only</option>
         <option value="amount"  <?= $S['discount_type']==='amount' ?'selected':'' ?>>Amount $ only</option>
         <option value="both"    <?= $S['discount_type']==='both'   ?'selected':'' ?>>Both (user picks)</option>
       </select></div>
+  </div>
+  <div class="form-row cols-3">
+    
     <div class="form-group"><label class="form-label">Max Discount %</label>
       <input type="number" name="discount_max_percent" class="form-control" step="0.01" min="0" max="100" value="<?= e($S['discount_max_percent']) ?>"></div>
     <div class="form-group"><label class="form-label">Max Discount Amount (0=unlimited)</label>
       <input type="number" name="discount_max_amount" class="form-control" step="0.01" min="0" value="<?= e($S['discount_max_amount']) ?>"></div>
-  </div>
-  <div class="form-group" style="max-width:200px"><label class="form-label">Default Discount</label>
+       <div class="form-group" style="max-width:200px"><label class="form-label">Default Discount</label>
     <input type="number" name="discount_default" class="form-control" step="0.01" min="0" value="<?= e($S['discount_default']) ?>"></div>
+  </div>
+ 
 </div>
 
 <div class="card mb-2">

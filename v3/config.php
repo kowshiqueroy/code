@@ -8,7 +8,7 @@ define('APP_VERSION', '3.2.1');
 if (strpos($_SERVER['HTTP_HOST'], 'localhost') !== false) {
     define('BASE_URL',    'http://localhost/code/v3');
 } else {
-    define('BASE_URL',    'https://541e-202-191-127-233.ngrok-free.app/code/v3');
+    define('BASE_URL',    'https://0e6e-202-191-127-233.ngrok-free.app/code/v3');
 }
 
 define('BASE_PATH',   __DIR__);

@@ -59,17 +59,23 @@ function navLink(string $page, string $icon, string $label, string $curPage): st
   <div class="nav-section">
     <div class="nav-section-label">Inventory</div>
     <?= navLink('products',   '📦', 'Products', $curPage) ?>
+    
+  <?php if (isAdmin()): ?>
     <?= navLink('categories', '🏷️', 'Categories', $curPage) ?>
     <?= navLink('brands',     '🏷️', 'Brands', $curPage) ?>
     <?= navLink('customers',  '👤', 'Customers', $curPage) ?>
+ <?php endif ?>
+        <?= navLink('inventory_report',  '📊', 'Inventory Report', $curPage) ?>
   </div>
 
   <div class="nav-section">
     <div class="nav-section-label">Finance</div>
     <?= navLink('sales',    '🧾', 'Sales', $curPage) ?>
     <?= navLink('finance',  '💰', 'Finance', $curPage) ?>
+     <?php if (isAdmin()): ?>
     <?= navLink('reports',  '📈', 'Reports', $curPage) ?>
-    <?= navLink('inventory_report',  '📊', 'Inventory Report', $curPage) ?>
+    <?php endif ?>
+
   </div>
 
   <?php if (isAdmin()): ?>
@@ -79,14 +85,17 @@ function navLink(string $page, string $icon, string $label, string $curPage): st
     <?= navLink('logs',     '📋', 'Action Logs', $curPage) ?>
     <?= navLink('settings', '⚙️', 'Settings',    $curPage) ?>
  
-    <?= navLink('sms', '📱', 'SMS', $curPage) ?>
+   
   </div>
   <?php endif ?>
 
   <div class="nav-section">
     <div class="nav-section-label">Tools</div>
     <?= navLink('barcodes', '🏷️', 'Print Labels', $curPage) ?>
-    <a href="offline.php" class="nav-link"><span class="icon">📵</span>Offline POS</a>
+      <?php if (isAdmin()): ?>
+         <?= navLink('sms', '📱', 'SMS', $curPage) ?>
+    <a href="index.php?page=backup" class="nav-link"><span class="icon">⚙️</span>Backup</a>
+    <?php endif ?>
   </div>
     
 

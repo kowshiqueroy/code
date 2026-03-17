@@ -18,6 +18,12 @@ if ($action === 'save_user' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $data['password'] = password_hash($_POST['password'], PASSWORD_DEFAULT);
     }
     if ($id) {
+
+      //if session user id is not 1 and editing id is 1 then do not allow to update and show error message
+      if (currentUser()['id'] !== 1 && $id === 1) {
+        flash('error', 'You cannot edit the main admin user.');
+        redirect('users');
+      }
         dbUpdate('users', $data, 'id = ?', [$id]);
     
         dbUpdate('users', $data, 'id = ?', [$id]);
@@ -36,7 +42,7 @@ if ($action === 'save_user' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
 
-$users   = dbFetchAll('SELECT * FROM users ORDER BY full_name');
+$users   = dbFetchAll('SELECT * FROM users  ORDER BY created_at DESC');
 $editing = !empty($_GET['edit']) ? dbFetch('SELECT * FROM users WHERE id = ?', [(int)$_GET['edit']]) : null;
 
 $pageTitle = 'Users';

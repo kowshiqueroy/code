@@ -71,7 +71,7 @@ require_once BASE_PATH . '/includes/header.php';
           <td>
             <span class="badge badge-<?= ['completed'=>'success','draft'=>'warning','cancelled'=>'danger'][$s['status']] ?? 'grey' ?>"><?= $s['status'] ?></span>
             <?php if ($s['status'] === 'draft'): ?>
-            <a href="index.php?page=pos_edit&id=<?= $s['id'] ?>" class="btn btn-sm btn-primary">POS</a>
+            <a href="index.php?page=pos&id=<?= $s['id'] ?>" class="btn btn-sm btn-primary">POS</a>
             <?php endif ?>
           </td>
           <td style="white-space:nowrap">

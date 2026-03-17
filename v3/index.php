@@ -14,6 +14,12 @@ $publicPages = ['login'];
 $page = $_GET['page'] ?? 'dashboard';
 
 if (!isLoggedIn() && !in_array($page, $publicPages)) {
+    //if    get ?pagefrom= then go to login and after login go to that page, else go to dashboard
+    if (isset($_GET['pagefrom'])) {
+        header('Location: ' . BASE_URL . '/login.php?pagefrom=' . $_GET['pagefrom']);
+        exit;
+    }
+
     header('Location: ' . BASE_URL . '/login.php');
     exit;
 }
@@ -32,18 +38,19 @@ $routes = [
     'categories'     => 'modules/categories/categories.php',
     'brands'         => 'modules/brands/brands.php',
     'customers'      => 'modules/customers/customers.php',
-    'sms'      => 'modules/customers/sms.php',
+    'sms'      => 'modules/settings/sms.php',
     'sales'          => 'modules/sales/sales.php',
     'invoice'        => 'modules/invoices/invoice.php',
     'finance'        => 'modules/finance/finance.php',
-    'inventory_report' => 'modules/finance/inventory_report.php',
+    'inventory_report' => 'modules/reports/inventory_report.php',
     'reports'        => 'modules/reports/reports.php',
     'users'          => 'modules/users/users.php',
     'logs'           => 'modules/logs/logs.php',
     'settings'       => 'modules/settings/settings.php',
     'barcodes'       => 'modules/barcodes/barcodes.php',
-    'offline_data'   => 'modules/offline/offline_data.php',
+  
     'thermal' => 'modules/invoices/thermal.php',
+    'backup' => 'modules/tools/backup.php',
 ];
 
 if (isset($routes[$page])) {
@@ -58,3 +65,4 @@ if (isset($routes[$page])) {
     http_response_code(404);
     echo '<h2>404 — Page not found</h2>';
 }
+
