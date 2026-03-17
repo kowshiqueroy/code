@@ -7,7 +7,16 @@ define('DB_NAME',    'ovijat_db');
 define('DB_USER',    'root');
 define('DB_PASS',    '');
 define('DB_CHARSET', 'utf8mb4');
-define('SITE_URL',   'http://localhost/code/ovijat');
+
+if (strpos($_SERVER['HTTP_HOST'], 'localhost') !== false) {
+    define('SITE_URL',    'http://localhost/code/ovijat');
+} else {
+    define('SITE_URL',    ' https://016f-202-191-127-232.ngrok-free.app/code/ovijat');
+}
+
+
+//if on ngrok.free.app, use SITE_URL as is. If on localhost, ensure it ends with '/code/ovijat' or adjust as needed.
+
 
 //if 
 define('BASE_PATH',  dirname(__DIR__));
@@ -186,28 +195,7 @@ function logAction(string $action, string $details=''): void {
     } catch(Exception $e){}
 }
 
-/* ── IP Geolocation & Helpline ───────────────────────── */
-function getCountryCode(): string {
-    if (!empty($_SESSION['user_country'])) return $_SESSION['user_country'];
-    
-    $ip = $_SERVER['REMOTE_ADDR'] === '::1' ? '103.145.128.0' : $_SERVER['REMOTE_ADDR']; // Default to BD IP for localhost testing
-    try {
-        $ctx = stream_context_create(['http' => ['timeout' => 2]]);
-        $res = @file_get_contents("http://ip-api.com/json/{$ip}?fields=countryCode", false, $ctx);
-        $data = json_decode($res, true);
-        $_SESSION['user_country'] = $data['countryCode'] ?? 'BD';
-    } catch (Exception $e) {
-        $_SESSION['user_country'] = 'BD';
-    }
-    return $_SESSION['user_country'];
-}
-
-function getDynamicHelpline(): string {
-    $isBD = (getCountryCode() === 'BD');
-    $key = $isBD ? 'helpline_bd' : 'helpline_intl';
-    $default = setting('helpline', '09647000025');
-    return setting($key, $default);
-}
+/* ── Visitor Log ─────────────────────────────────────── */
 function logVisitor(): void {
     try {
         $page = ($_SERVER['QUERY_STRING']??'') ? '/?'.($_SERVER['QUERY_STRING']) : '/';

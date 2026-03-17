@@ -1,17 +1,18 @@
 <?php
 /**
- * OVIJAT GROUP — footer.php v2.0 (Refactored)
+ * OVIJAT GROUP — footer.php v2.1 (Manual Helplines)
  */
 $lang     = lang();
 $siteName = 'OVIJAT';
-$helpline = getDynamicHelpline();
+$helpline_float = setting('helpline_float');
+$helpline_footer = setting('helpline_footer');
 $facebook = setting('facebook','');
 $linkedin = setting('linkedin','');
 $youtube  = setting('youtube','');
 ?>
 </main>
 
-<a href="tel:<?= e($helpline) ?>" class="float-helpline" title="Call Helpline">📞</a>
+<a href="tel:<?= e($helpline_float) ?>" class="float-helpline" title="Call Helpline">📞</a>
 
 <?php $brochureFile = setting('brochure_pdf'); if($brochureFile): ?>
 <a href="<?= SITE_URL ?>/uploads/docs/<?= $brochureFile ?>" class="float-brochure" target="_blank" title="Download Brochure">
@@ -102,7 +103,7 @@ $youtube  = setting('youtube','');
     <div class="container footer-bottom-inner">
       <p>Copyright &copy; 2015–<?= date('Y') ?> Ovijat Group. <?= L('footer_copyright') ?></p>
       <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-        <span class="footer-helpline-bottom">📞 <?= e($helpline) ?></span>
+        <span class="footer-helpline-bottom">📞 <?= e($helpline_footer) ?></span>
         <span class="footer-credit">
           <a href="<?= SITE_URL ?>/admin/" class="footer-it-link" title="Admin Panel">IT Team</a>
         </span>

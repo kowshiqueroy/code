@@ -9,7 +9,7 @@ requireAdmin();
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify()) {
     $fields = [
         'site_name_en','site_name_bn','site_tagline_en','site_tagline_bn',
-        'helpline','helpline_bd','helpline_intl','email','address_en','address_bn',
+        'helpline_header','helpline_footer','helpline_float','email','address_en','address_bn',
         'footer_about_en','footer_about_bn',
         'facebook','linkedin','youtube',
         'default_lang','ticker_enabled',
@@ -105,25 +105,25 @@ require_once __DIR__ . '/partials/admin_header.php';
 
   <!-- Contact -->
   <div class="admin-panel">
-    <h2 class="admin-section-title">Contact & Dynamic Helpline</h2>
+    <h2 class="admin-section-title">Manual Helplines</h2>
     <div class="form-row">
       <div class="form-group">
-        <label>Default Helpline (Fall-back)</label>
-        <input type="text" name="helpline" class="form-input" value="<?= e(setting('helpline')) ?>">
+        <label>Header Helpline</label>
+        <input type="text" name="helpline_header" class="form-input" value="<?= e(setting('helpline_header')) ?>" placeholder="Shown at the very top">
       </div>
       <div class="form-group">
-        <label>Email Address</label>
-        <input type="email" name="email" class="form-input" value="<?= e(setting('email')) ?>">
+        <label>Footer Helpline</label>
+        <input type="text" name="helpline_footer" class="form-input" value="<?= e(setting('helpline_footer')) ?>" placeholder="Shown in the bottom footer bar">
+      </div>
+      <div class="form-group">
+        <label>Floating Call Button Number</label>
+        <input type="text" name="helpline_float" class="form-input" value="<?= e(setting('helpline_float')) ?>" placeholder="The number called when clicking the green icon">
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>🇧🇩 Helpline (if IP is Bangladesh)</label>
-        <input type="text" name="helpline_bd" class="form-input" value="<?= e(setting('helpline_bd')) ?>" placeholder="e.g. 01733390331">
-      </div>
-      <div class="form-group">
-        <label>🌐 Helpline (International)</label>
-        <input type="text" name="helpline_intl" class="form-input" value="<?= e(setting('helpline_intl')) ?>" placeholder="e.g. +19173885447">
+        <label>Email Address</label>
+        <input type="email" name="email" class="form-input" value="<?= e(setting('email')) ?>">
       </div>
     </div>
     <div class="form-row">
