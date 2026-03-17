@@ -1,14 +1,12 @@
 <?php
 /**
- * OVIJAT GROUP — header.php v2.0
- * Fixes: logo+brand name, language toggle shows opposite, dropdown nav,
- *        ticker icon only, social links conditional, centered grids.
+ * OVIJAT GROUP — header.php v2.0 (Refactored)
  */
 $lang        = lang();
 $siteName    = 'OVIJAT';
 $siteSubName = 'FOOD & BEVERAGE INDUSTRIES LTD.';
 $logo        = setting('logo');
-$helpline    = setting('helpline','09647000025');
+$helpline    = getDynamicHelpline();
 $ticker      = getActiveTicker();
 $popup       = getActivePopup();
 $currentPage = $_GET['page'] ?? 'home';
@@ -24,13 +22,13 @@ try {
 } catch(Exception $e){ $navCats=[]; $topNavCats=[]; }
 
 $navLinks = [
-    ['page'=>'home',       'en'=>'Home',      'bn'=>'হোম'],
-    ['page'=>'rice',       'en'=>'Rice',       'bn'=>'চাল'],
-    ['page'=>'concerns',   'en'=>'Companies',  'bn'=>'প্রতিষ্ঠান'],
-    ['page'=>'global',     'en'=>'Global',     'bn'=>'বৈশ্বিক'],
-    ['page'=>'management', 'en'=>'Leadership', 'bn'=>'নেতৃত্ব'],
-    ['page'=>'careers',    'en'=>'Careers',    'bn'=>'ক্যারিয়ার'],
-    ['page'=>'contact',    'en'=>'Contact',    'bn'=>'যোগাযোগ'],
+    ['page'=>'home',       'key'=>'nav_home'],
+    ['page'=>'rice',       'key'=>'nav_rice'],
+    ['page'=>'concerns',   'key'=>'nav_concerns'],
+    ['page'=>'global',     'key'=>'nav_global'],
+    ['page'=>'management', 'key'=>'nav_leadership'],
+    ['page'=>'careers',    'key'=>'nav_careers'],
+    ['page'=>'contact',    'key'=>'nav_contact'],
 ];
 ?>
 <!DOCTYPE html>
@@ -47,14 +45,10 @@ $navLinks = [
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;900&family=DM+Sans:wght@300;400;500;600;700&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/main.css">
-
 <link rel="icon" href="uploads/ovijatlogo.ico" type="image/x-icon">
-
-
 </head>
 <body class="lang-<?= $lang ?>">
 
-<!-- Loading Screen -->
 <div id="loading-screen">
   <div class="loader-inner">
     <div class="loader-logo-wrap">
@@ -68,7 +62,6 @@ $navLinks = [
 </div>
 
 <?php if($popup): ?>
-<!-- Event Popup -->
 <div id="event-popup" class="popup-overlay" aria-hidden="true">
   <div class="popup-box" role="dialog" aria-modal="true">
     <button class="popup-close" id="popupClose" aria-label="Close">&#x2715;</button>
@@ -95,9 +88,8 @@ $navLinks = [
 <?php endif; ?>
 
 <?php if($ticker): ?>
-<!-- News Ticker — icon only, no text -->
 <div class="ticker-wrap" aria-label="News ticker">
-  <span class="ticker-label">📢 <?= $lang==='bn'?'সংবাদ':'NEWS' ?></span>
+  <span class="ticker-label">📢 <?= L('news') ?></span>
   <div class="ticker-content" role="marquee">
     <div class="ticker-inner">
       <?php foreach($ticker as $item): ?>
@@ -113,7 +105,6 @@ $navLinks = [
 </div>
 <?php endif; ?>
 
-<!-- Top Bar -->
 <div class="topbar">
   <div class="container topbar-inner">
     <div class="topbar-left">
@@ -124,7 +115,6 @@ $navLinks = [
       <?php if($facebook): ?><a href="<?= e($facebook) ?>" class="topbar-social" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg></a><?php endif; ?>
       <?php if($linkedin): ?><a href="<?= e($linkedin) ?>" class="topbar-social" target="_blank" rel="noopener" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7H10v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg></a><?php endif; ?>
       <?php if($youtube): ?><a href="<?= e($youtube) ?>" class="topbar-social" target="_blank" rel="noopener" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 00-1.95 1.96A29 29 0 001 12a29 29 0 00.46 5.58 2.78 2.78 0 001.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.96A29 29 0 0023 12a29 29 0 00-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="white"/></svg></a><?php endif; ?>
-      <!-- Language toggle: shows OPPOSITE language to switch to -->
       <div class="lang-toggle">
         <?php if($lang==='en'): ?>
           <a href="<?= SITE_URL ?>/?page=lang&l=bn" class="lang-btn">বাংলা</a>
@@ -136,10 +126,8 @@ $navLinks = [
   </div>
 </div>
 
-<!-- Main Header -->
 <header class="site-header" id="siteHeader">
   <div class="container header-inner">
-    <!-- Logo + Brand Name (like image 4) -->
     <a href="<?= SITE_URL ?>/" class="site-logo" aria-label="Ovijat Home">
       <?php if($logoUrl): ?>
         <img src="<?= e($logoUrl) ?>" alt="Ovijat Logo" class="logo-img" loading="eager">
@@ -152,24 +140,21 @@ $navLinks = [
       </div>
     </a>
 
-    <!-- Desktop Nav -->
     <nav class="main-nav" aria-label="Main navigation">
       <ul class="nav-list">
-        <!-- Home -->
         <li class="nav-item">
           <a href="<?= SITE_URL ?>/?page=home" class="nav-link <?= $currentPage==='home'?'active':'' ?>">
-            <?= $lang==='bn'?'হোম':'Home' ?>
+            <?= L('nav_home') ?>
           </a>
         </li>
 
-        <!-- Products with dropdown -->
         <li class="nav-item">
           <a href="<?= SITE_URL ?>/?page=products" class="nav-link <?= in_array($currentPage,['products','category','product'])?'active':'' ?>">
-            <?= $lang==='bn'?'পণ্যসমূহ':'Products' ?> <span class="nav-arrow">▾</span>
+            <?= L('nav_products') ?> <span class="nav-arrow">▾</span>
           </a>
           <?php if($topNavCats): ?>
           <div class="nav-dropdown">
-            <div class="nav-dropdown-parent"><?= $lang==='bn'?'সব বিভাগ':'All Categories' ?></div>
+            <div class="nav-dropdown-parent"><?= L('nav_all_categories') ?></div>
             <?php foreach($topNavCats as $nc): ?>
               <a href="<?= SITE_URL ?>/?page=category&id=<?= $nc['id'] ?>" class="nav-dropdown-item">
                 <?= e($lang==='bn'?$nc['name_bn']:$nc['name_en']) ?>
@@ -177,17 +162,16 @@ $navLinks = [
             <?php endforeach; ?>
             <div class="nav-dropdown-sep"></div>
             <a href="<?= SITE_URL ?>/?page=products" class="nav-dropdown-item" style="color:var(--green-mid);font-weight:700">
-              <?= $lang==='bn'?'সব পণ্য দেখুন →':'View All Products →' ?>
+              <?= L('nav_view_all_prod') ?>
             </a>
           </div>
           <?php endif; ?>
         </li>
 
-        <!-- Other links -->
-        <?php foreach($navLinks as $link): if($link['page']==='home') continue; ?>
+        <?php foreach($navLinks as $link): if($link['key']==='nav_home') continue; ?>
         <li class="nav-item">
           <a href="<?= SITE_URL ?>/?page=<?= $link['page'] ?>" class="nav-link <?= $currentPage===$link['page']?'active':'' ?>">
-            <?= $lang==='bn'?e($link['bn']):e($link['en']) ?>
+            <?= L($link['key']) ?>
           </a>
         </li>
         <?php endforeach; ?>
@@ -200,20 +184,19 @@ $navLinks = [
   </div>
 </header>
 
-<!-- Mobile Nav -->
 <div class="mobile-nav" id="mobileNav" aria-hidden="true">
   <ul class="mobile-nav-list">
-    <li><a href="<?= SITE_URL ?>/?page=home" class="mobile-nav-link <?= $currentPage==='home'?'active':'' ?>"><?= $lang==='bn'?'হোম':'Home' ?></a></li>
+    <li><a href="<?= SITE_URL ?>/?page=home" class="mobile-nav-link <?= $currentPage==='home'?'active':'' ?>"><?= L('nav_home') ?></a></li>
     <li>
-      <a href="<?= SITE_URL ?>/?page=products" class="mobile-nav-link <?= in_array($currentPage,['products','category','product'])?'active':'' ?>"><?= $lang==='bn'?'পণ্যসমূহ':'Products' ?></a>
+      <a href="<?= SITE_URL ?>/?page=products" class="mobile-nav-link <?= in_array($currentPage,['products','category','product'])?'active':'' ?>"><?= L('nav_products') ?></a>
       <?php if($topNavCats): ?>
         <?php foreach($topNavCats as $nc): ?>
           <a href="<?= SITE_URL ?>/?page=category&id=<?= $nc['id'] ?>" class="mobile-sub-link">↳ <?= e($lang==='bn'?$nc['name_bn']:$nc['name_en']) ?></a>
         <?php endforeach; ?>
       <?php endif; ?>
     </li>
-    <?php foreach($navLinks as $link): if($link['page']==='home') continue; ?>
-    <li><a href="<?= SITE_URL ?>/?page=<?= $link['page'] ?>" class="mobile-nav-link <?= $currentPage===$link['page']?'active':'' ?>"><?= $lang==='bn'?e($link['bn']):e($link['en']) ?></a></li>
+    <?php foreach($navLinks as $link): if($link['key']==='nav_home') continue; ?>
+    <li><a href="<?= SITE_URL ?>/?page=<?= $link['page'] ?>" class="mobile-nav-link <?= $currentPage===$link['page']?'active':'' ?>"><?= L($link['key']) ?></a></li>
     <?php endforeach; ?>
     <li class="mobile-lang-row">
       <?php if($lang==='en'): ?>

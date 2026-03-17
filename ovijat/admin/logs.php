@@ -18,6 +18,22 @@ if ($startDate > $endDate) {
 $page = max(1, (int)($_GET['p'] ?? 1)); 
 $perPg = 50;
 
+// Log Cleanup Logic (Superadmin Only)
+if (($_GET['action'] ?? '') === 'cleanup' && $_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify()) {
+    requireRole('superadmin');
+    $days = (int)($_POST['days'] ?? 90);
+    $date = date('Y-m-d', strtotime("-$days days"));
+    
+    try {
+        $vCount = db()->exec("DELETE FROM visitor_logs WHERE created_at < '$date'");
+        $aCount = db()->exec("DELETE FROM action_logs WHERE created_at < '$date'");
+        flash("Cleanup successful: Deleted $vCount visitor logs and $aCount action logs older than $days days.", 'success');
+    } catch (Exception $e) {
+        flash("Cleanup failed: " . $e->getMessage(), 'error');
+    }
+    redirect(SITE_URL . '/admin/logs.php?tab=' . $tab);
+}
+
 if ($tab === 'visitors') {
     // VISITOR LOGS QUERY BUILDING
     $whereClause = "WHERE DATE(created_at) BETWEEN :start_date AND :end_date";
@@ -90,6 +106,23 @@ require_once __DIR__.'/partials/admin_header.php';
   <a href="?tab=actions&start_date=<?= e($startDate)?>&end_date=<?= e($endDate)?>" class="btn <?=$tab==='actions'?'btn-primary':'btn-ghost'?> btn-sm">🛠️ Action Logs</a>
   <a href="?tab=visitors&start_date=<?= e($startDate)?>&end_date=<?= e($endDate)?>" class="btn <?=$tab==='visitors'?'btn-primary':'btn-ghost'?> btn-sm">👁️ Visitor Logs</a>
 </div>
+
+<?php if (($_SESSION['admin_role'] ?? '') === 'superadmin'): ?>
+<div class="admin-panel" style="border:1px solid var(--red-light); margin-bottom:1.5rem; background:#fff5f5">
+  <h3 style="margin-top:0; font-size:.9rem; color:var(--red-brand)">🧹 Log Cleanup</h3>
+  <form method="POST" action="?action=cleanup&tab=<?= e($tab) ?>" onsubmit="return confirm('Are you sure? This will permanently delete old logs.')" style="display:flex; gap:1rem; align-items:center">
+    <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+    <span style="font-size:.85rem">Delete logs older than:</span>
+    <select name="days" class="form-input" style="width:auto; padding:2px 8px; height:32px">
+        <option value="30">30 Days</option>
+        <option value="60">60 Days</option>
+        <option value="90" selected>90 Days</option>
+        <option value="180">180 Days</option>
+    </select>
+    <button type="submit" class="btn btn-danger btn-sm">Run Cleanup Now</button>
+  </form>
+</div>
+<?php endif; ?>
 
 <div class="admin-panel" style="padding:1rem 1.5rem; margin-bottom:1.5rem;">
   <form method="GET" style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end">

@@ -1,18 +1,23 @@
 <?php
 /**
- * OVIJAT GROUP — footer.php v2.0
- * Full office details, helpline, IT Team link to admin.
+ * OVIJAT GROUP — footer.php v2.0 (Refactored)
  */
 $lang     = lang();
 $siteName = 'OVIJAT';
+$helpline = getDynamicHelpline();
 $facebook = setting('facebook','');
 $linkedin = setting('linkedin','');
 $youtube  = setting('youtube','');
 ?>
 </main>
 
-<!-- Float Helpline -->
-<a href="tel:09647000025" class="float-helpline" title="Call Helpline">📞</a>
+<a href="tel:<?= e($helpline) ?>" class="float-helpline" title="Call Helpline">📞</a>
+
+<?php $brochureFile = setting('brochure_pdf'); if($brochureFile): ?>
+<a href="<?= SITE_URL ?>/uploads/docs/<?= $brochureFile ?>" class="float-brochure" target="_blank" title="Download Brochure">
+  <span class="brochure-icon">📄</span> <span class="brochure-text"><?= L('read_more') === 'আরও পড়ুন' ? 'ব্রোশিওর' : 'Brochure' ?></span>
+</a>
+<?php endif; ?>
 
 <footer class="site-footer">
   <div class="footer-top">
@@ -20,7 +25,7 @@ $youtube  = setting('youtube','');
 
       <!-- About -->
       <div class="footer-col footer-about-col">
-        <h3 class="footer-heading"><?= $lang==='bn'?'অভিজাত গ্রুপ সম্পর্কে':'About Ovijat Group' ?></h3>
+        <h3 class="footer-heading"><?= L('footer_about_title') ?></h3>
         <p class="footer-about-text"><?= e(setting('footer_about_'.$lang,'Ovijat Group is one of Bangladesh\'s leading food and beverage conglomerates.')) ?></p>
         <div class="footer-social">
           <?php if($facebook): ?><a href="<?= e($facebook) ?>" target="_blank" rel="noopener" class="social-icon" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor" width="18"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg></a><?php endif; ?>
@@ -31,22 +36,22 @@ $youtube  = setting('youtube','');
 
       <!-- Quick Links -->
       <div class="footer-col">
-        <h3 class="footer-heading"><?= $lang==='bn'?'দ্রুত লিংক':'Quick Links' ?></h3>
+        <h3 class="footer-heading"><?= L('footer_quick_links') ?></h3>
         <ul class="footer-links">
-          <li><a href="<?= SITE_URL ?>/?page=home"><?= $lang==='bn'?'হোম':'Home' ?></a></li>
-          <li><a href="<?= SITE_URL ?>/?page=products"><?= $lang==='bn'?'পণ্যসমূহ':'Products' ?></a></li>
-          <li><a href="<?= SITE_URL ?>/?page=rice"><?= $lang==='bn'?'রাইস শোকেস':'Rice Showcase' ?></a></li>
-          <li><a href="<?= SITE_URL ?>/?page=concerns"><?= $lang==='bn'?'সিস্টার কনসার্ন':'Sister Concerns' ?></a></li>
-          <li><a href="<?= SITE_URL ?>/?page=global"><?= $lang==='bn'?'বৈশ্বিক উপস্থিতি':'Global Presence' ?></a></li>
-          <li><a href="<?= SITE_URL ?>/?page=management"><?= $lang==='bn'?'ব্যবস্থাপনা':'Management' ?></a></li>
-          <li><a href="<?= SITE_URL ?>/?page=careers"><?= $lang==='bn'?'ক্যারিয়ার':'Careers' ?></a></li>
-          <li><a href="<?= SITE_URL ?>/?page=contact"><?= $lang==='bn'?'যোগাযোগ':'Contact' ?></a></li>
+          <li><a href="<?= SITE_URL ?>/?page=home"><?= L('nav_home') ?></a></li>
+          <li><a href="<?= SITE_URL ?>/?page=products"><?= L('nav_products') ?></a></li>
+          <li><a href="<?= SITE_URL ?>/?page=rice"><?= L('footer_rice_showcase') ?></a></li>
+          <li><a href="<?= SITE_URL ?>/?page=concerns"><?= L('footer_sister_concerns') ?></a></li>
+          <li><a href="<?= SITE_URL ?>/?page=global"><?= L('nav_global') ?></a></li>
+          <li><a href="<?= SITE_URL ?>/?page=management"><?= L('footer_management') ?></a></li>
+          <li><a href="<?= SITE_URL ?>/?page=careers"><?= L('nav_careers') ?></a></li>
+          <li><a href="<?= SITE_URL ?>/?page=contact"><?= L('nav_contact') ?></a></li>
         </ul>
       </div>
 
       <!-- Products -->
       <div class="footer-col">
-        <h3 class="footer-heading"><?= $lang==='bn'?'পণ্য বিভাগ':'Product Lines' ?></h3>
+        <h3 class="footer-heading"><?= L('footer_product_lines') ?></h3>
         <ul class="footer-links">
           <?php
           try {
@@ -61,7 +66,7 @@ $youtube  = setting('youtube','');
 
       <!-- Office Contacts -->
       <div class="footer-col">
-        <h3 class="footer-heading"><?= $lang==='bn'?'যোগাযোগ':'Our Offices' ?></h3>
+        <h3 class="footer-heading"><?= L('footer_offices') ?></h3>
         <div class="footer-offices">
           <div class="footer-office-block">
             <div class="footer-office-title">🇺🇸 USA Office</div>
@@ -95,9 +100,9 @@ $youtube  = setting('youtube','');
 
   <div class="footer-bottom">
     <div class="container footer-bottom-inner">
-      <p>Copyright &copy; 2015–<?= date('Y') ?> Ovijat Group. <?= $lang==='bn'?'সর্বস্বত্ব সংরক্ষিত।':'All Rights Reserved.' ?></p>
+      <p>Copyright &copy; 2015–<?= date('Y') ?> Ovijat Group. <?= L('footer_copyright') ?></p>
       <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-        <span class="footer-helpline-bottom">📞 09647000025</span>
+        <span class="footer-helpline-bottom">📞 <?= e($helpline) ?></span>
         <span class="footer-credit">
           <a href="<?= SITE_URL ?>/admin/" class="footer-it-link" title="Admin Panel">IT Team</a>
         </span>

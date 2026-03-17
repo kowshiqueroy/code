@@ -9,7 +9,7 @@ requireAdmin();
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify()) {
     $fields = [
         'site_name_en','site_name_bn','site_tagline_en','site_tagline_bn',
-        'helpline','email','address_en','address_bn',
+        'helpline','helpline_bd','helpline_intl','email','address_en','address_bn',
         'footer_about_en','footer_about_bn',
         'facebook','linkedin','youtube',
         'default_lang','ticker_enabled',
@@ -26,6 +26,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify()) {
         $newLogo = processUploadedImage($_FILES['logo'], 'logo', 'logos', setting('logo'));
         if ($newLogo) {
             db()->prepare("INSERT INTO settings (`key`,`value`) VALUES ('logo',?) ON DUPLICATE KEY UPDATE `value`=?")->execute([$newLogo, $newLogo]);
+        }
+    }
+
+    // Brochure PDF upload
+    if (!empty($_FILES['brochure']['name'])) {
+        $newPdf = processUploadedFile($_FILES['brochure'], 'docs', setting('brochure_pdf'));
+        if ($newPdf) {
+            db()->prepare("INSERT INTO settings (`key`,`value`) VALUES ('brochure_pdf',?) ON DUPLICATE KEY UPDATE `value`=?")->execute([$newPdf, $newPdf]);
         }
     }
 
@@ -97,15 +105,25 @@ require_once __DIR__ . '/partials/admin_header.php';
 
   <!-- Contact -->
   <div class="admin-panel">
-    <h2 class="admin-section-title">Contact Information</h2>
+    <h2 class="admin-section-title">Contact & Dynamic Helpline</h2>
     <div class="form-row">
       <div class="form-group">
-        <label>Helpline Number</label>
+        <label>Default Helpline (Fall-back)</label>
         <input type="text" name="helpline" class="form-input" value="<?= e(setting('helpline')) ?>">
       </div>
       <div class="form-group">
         <label>Email Address</label>
         <input type="email" name="email" class="form-input" value="<?= e(setting('email')) ?>">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>🇧🇩 Helpline (if IP is Bangladesh)</label>
+        <input type="text" name="helpline_bd" class="form-input" value="<?= e(setting('helpline_bd')) ?>" placeholder="e.g. 01733390331">
+      </div>
+      <div class="form-group">
+        <label>🌐 Helpline (International)</label>
+        <input type="text" name="helpline_intl" class="form-input" value="<?= e(setting('helpline_intl')) ?>" placeholder="e.g. +19173885447">
       </div>
     </div>
     <div class="form-row">
@@ -117,6 +135,25 @@ require_once __DIR__ . '/partials/admin_header.php';
         <label>Address (বাংলা)</label>
         <textarea name="address_bn" class="form-textarea" rows="3"><?= e(setting('address_bn')) ?></textarea>
       </div>
+    </div>
+  </div>
+
+  <!-- Documents -->
+  <div class="admin-panel">
+    <h2 class="admin-section-title">Brochures & Documents</h2>
+    <div class="form-group">
+      <label>Company Brochure (PDF)</label>
+      <?php $brochure = setting('brochure_pdf'); if ($brochure): ?>
+        <div class="current-media" style="background:#eef2ff; border-color:#c7d2fe">
+          <span style="font-size:1.5rem">📄</span>
+          <div style="flex:1">
+            <a href="<?= SITE_URL ?>/uploads/docs/<?= $brochure ?>" target="_blank" style="font-weight:600; color:var(--blue-600)">View Current Brochure</a>
+            <br><small>Uploaded: <?= $brochure ?></small>
+          </div>
+        </div>
+      <?php endif; ?>
+      <input type="file" name="brochure" class="form-input" accept="application/pdf">
+      <small class="form-hint">Only PDF files allowed. Max 10MB.</small>
     </div>
   </div>
 

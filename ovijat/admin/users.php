@@ -1,5 +1,6 @@
 <?php
-require_once __DIR__.'/auth.php'; requireAdmin();
+require_once __DIR__.'/auth.php'; 
+requireRole('superadmin');
 $action=$_GET['action']??'list'; $id=(int)($_GET['id']??0);
 
 if($action==='delete'&&$id){

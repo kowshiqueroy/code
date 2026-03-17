@@ -7,7 +7,9 @@ define('DB_NAME',    'ovijat_db');
 define('DB_USER',    'root');
 define('DB_PASS',    '');
 define('DB_CHARSET', 'utf8mb4');
-define('SITE_URL',   'http://localhost/ovijat');
+define('SITE_URL',   'http://localhost/code/ovijat');
+
+//if 
 define('BASE_PATH',  dirname(__DIR__));
 define('UPLOAD_DIR', BASE_PATH . '/uploads/');
 define('UPLOAD_URL', SITE_URL . '/uploads/');
@@ -112,11 +114,43 @@ function processUploadedImage(array $file, string $section, string $subdir, stri
     return $newName;
 }
 
+function processUploadedFile(array $file, string $subdir, string $oldFile='', array $allowed=['application/pdf']): string|false {
+    if($file['error'] !== UPLOAD_ERR_OK) return false;
+    if($file['size'] > MAX_UPLOAD_SIZE){ flash('File too large (max 10MB).','error'); return false; }
+    $mime = mime_content_type($file['tmp_name']);
+    if(!in_array($mime, $allowed)){ flash('Invalid file type. Only PDF allowed.','error'); return false; }
+    
+    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $newName = uniqid('doc_', true) . '.' . $ext;
+    $destDir = UPLOAD_DIR . $subdir . '/';
+    if(!is_dir($destDir)) mkdir($destDir, 0755, true);
+    
+    if(move_uploaded_file($file['tmp_name'], $destDir . $newName)){
+        if($oldFile && file_exists($destDir . $oldFile)) @unlink($destDir . $oldFile);
+        return $newName;
+    }
+    return false;
+}
+
 /* ── Security ───────────────────────────────────────── */
 function e(string $str): string { return htmlspecialchars($str,ENT_QUOTES|ENT_HTML5,'UTF-8'); }
 function csrf_token(): string { if(empty($_SESSION['csrf_token'])) $_SESSION['csrf_token']=bin2hex(random_bytes(32)); return $_SESSION['csrf_token']; }
-function csrf_verify(): bool { $t=$_POST['csrf_token']??''; return !empty($t)&&hash_equals($_SESSION['csrf_token']??'',$t); }
+function csrf_verify(?string $token = null): bool { 
+    $t = $token ?? $_POST['csrf_token'] ?? $_GET['csrf_token'] ?? ''; 
+    return !empty($t) && hash_equals($_SESSION['csrf_token'] ?? '', $t); 
+}
 function redirect(string $url): never { header("Location: $url"); exit; }
+
+/* ── Translation ────────────────────────────────────── */
+function __ (string $en, string $bn): string {
+    return lang() === 'bn' ? $bn : $en;
+}
+function L(string $key): string {
+    static $strings = null;
+    if ($strings === null) $strings = require __DIR__ . '/lang_strings.php';
+    $lang = lang();
+    return $strings[$key][$lang] ?? $strings[$key]['en'] ?? $key;
+}
 function flash(string $msg, string $type='success'): void { $_SESSION['flash']=['msg'=>$msg,'type'=>$type]; }
 function getFlash(): array { $f=$_SESSION['flash']??null; unset($_SESSION['flash']); return $f??[]; }
 function sanitizeText(string $input): string { return strip_tags(trim($input)); }
@@ -152,7 +186,28 @@ function logAction(string $action, string $details=''): void {
     } catch(Exception $e){}
 }
 
-/* ── Visitor Log ─────────────────────────────────────── */
+/* ── IP Geolocation & Helpline ───────────────────────── */
+function getCountryCode(): string {
+    if (!empty($_SESSION['user_country'])) return $_SESSION['user_country'];
+    
+    $ip = $_SERVER['REMOTE_ADDR'] === '::1' ? '103.145.128.0' : $_SERVER['REMOTE_ADDR']; // Default to BD IP for localhost testing
+    try {
+        $ctx = stream_context_create(['http' => ['timeout' => 2]]);
+        $res = @file_get_contents("http://ip-api.com/json/{$ip}?fields=countryCode", false, $ctx);
+        $data = json_decode($res, true);
+        $_SESSION['user_country'] = $data['countryCode'] ?? 'BD';
+    } catch (Exception $e) {
+        $_SESSION['user_country'] = 'BD';
+    }
+    return $_SESSION['user_country'];
+}
+
+function getDynamicHelpline(): string {
+    $isBD = (getCountryCode() === 'BD');
+    $key = $isBD ? 'helpline_bd' : 'helpline_intl';
+    $default = setting('helpline', '09647000025');
+    return setting($key, $default);
+}
 function logVisitor(): void {
     try {
         $page = ($_SERVER['QUERY_STRING']??'') ? '/?'.($_SERVER['QUERY_STRING']) : '/';
