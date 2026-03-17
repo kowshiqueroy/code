@@ -1,0 +1,22 @@
+OVIJAT LOGO UPLOAD INSTRUCTIONS
+================================
+
+Your 4 logo files are included in: assets/images/
+  - logo_square.png     → ovijat300x300.png (use for favicon/social)
+  - logo_full.png       → logo__1_.png (high-res black bg version)
+  - logo_bn.png         → Bengali version
+  - logo_reference.png  → Full brand lockup (OVIJAT + text)
+
+TO SET THE LOGO ON YOUR SITE:
+1. Go to Admin Panel → Site Settings
+2. Upload "logo_reference.png" (the wide version with text)
+   OR upload "logo_square.png" (just the oval badge)
+3. The system will auto-resize to 400×160px
+
+NOTE: Since image 4 shows "logo + OVIJAT + FOOD & BEVERAGE INDUSTRIES LTD."
+the code already displays these text labels beside the logo badge in the header,
+so you may prefer to upload ONLY the oval badge (logo_square.png) and let
+the text render from the HTML for sharpness.
+
+RECOMMENDED: Upload logo_square.png (300×300) as the logo.
+The code will show it + "OVIJAT" + "FOOD & BEVERAGE INDUSTRIES LTD." beside it.

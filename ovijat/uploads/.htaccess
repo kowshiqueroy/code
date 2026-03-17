@@ -1,0 +1,24 @@
+# ═══════════════════════════════════════════════════════════
+# OVIJAT GROUP — uploads/.htaccess
+# CRITICAL SECURITY: Prevent execution of any PHP or scripts
+# inside the uploads directory. Only serve static files.
+# ═══════════════════════════════════════════════════════════
+
+# Deny PHP execution — even if someone uploads a .php file
+<FilesMatch "\.(php|php3|php4|php5|php7|phtml|pl|py|jsp|asp|sh|cgi|shtml|phar)$">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# Disable script execution
+Options -ExecCGI
+RemoveHandler .php .php3 .php4 .php5 .phtml .pl .py .sh .cgi
+
+# Prevent directory listing
+Options -Indexes
+
+# Only allow image file types to be served
+<FilesMatch "\.(webp|jpg|jpeg|png|gif|svg|ico)$">
+  Order allow,deny
+  Allow from all
+</FilesMatch>

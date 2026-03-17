@@ -1,0 +1,86 @@
+# ═══════════════════════════════════════════════════════════
+# OVIJAT GROUP — .htaccess (Root)
+# Apache URL routing, security headers, cache rules.
+# ═══════════════════════════════════════════════════════════
+
+Options -Indexes
+Options -MultiViews
+
+# ─── Rewrite Engine ─────────────────────────────────────────
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /ovijat/
+
+  # Prevent direct access to includes directory
+  RewriteRule ^includes/ - [F,L]
+
+  # Allow existing files and directories to pass through
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+
+  # All other requests → index.php (front controller)
+  # Note: admin/* has its own routing via direct file access
+  RewriteRule ^(?!admin/)(.*)$ index.php [QSA,L]
+</IfModule>
+
+# ─── PHP Security Settings ───────────────────────────────────
+<IfModule mod_php.c>
+  php_flag display_errors Off
+  php_flag log_errors On
+  php_value upload_max_filesize 12M
+  php_value post_max_size 15M
+  php_value max_execution_time 60
+</IfModule>
+
+# ─── Security Headers ────────────────────────────────────────
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set X-XSS-Protection "1; mode=block"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+  # Remove server signature
+  Header unset Server
+  Header unset X-Powered-By
+</IfModule>
+
+# ─── Block Access to Sensitive Files ────────────────────────
+<FilesMatch "^(setup\.php|\.env|composer\.(json|lock)|package\.json)$">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# Block .htaccess from being read directly
+<Files ".htaccess">
+  Order allow,deny
+  Deny from all
+</Files>
+
+# ─── Browser Caching ─────────────────────────────────────────
+<IfModule mod_expires.c>
+  ExpiresActive On
+
+  # Images
+  ExpiresByType image/webp   "access plus 1 month"
+  ExpiresByType image/jpeg   "access plus 1 month"
+  ExpiresByType image/png    "access plus 1 month"
+  ExpiresByType image/gif    "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType image/x-icon  "access plus 1 year"
+
+  # CSS & JS
+  ExpiresByType text/css            "access plus 1 week"
+  ExpiresByType application/javascript "access plus 1 week"
+
+  # Fonts
+  ExpiresByType font/woff2   "access plus 1 year"
+  ExpiresByType font/woff    "access plus 1 year"
+</IfModule>
+
+# ─── Gzip Compression ────────────────────────────────────────
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript text/plain application/json
+</IfModule>
+
+# ─── Protect uploads from PHP execution ─────────────────────
+# (Applied specifically via /uploads/.htaccess below)

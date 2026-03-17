@@ -1,0 +1,15 @@
+# ═══════════════════════════════════════════════════════════
+# OVIJAT GROUP — admin/.htaccess
+# Prevent directory listing, protect admin assets.
+# ═══════════════════════════════════════════════════════════
+
+Options -Indexes
+
+# Prevent direct access to auth.php (it's only included, not accessed directly)
+# Access to auth.php via browser does logout, which is fine.
+
+# Security headers for admin
+<IfModule mod_headers.c>
+  Header always set X-Robots-Tag "noindex, nofollow"
+  Header always set Cache-Control "no-store, no-cache, must-revalidate, private"
+</IfModule>
