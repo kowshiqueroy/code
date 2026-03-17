@@ -4,26 +4,9 @@
 // ============================================================
 requireRole(ROLE_ADMIN);
 
-function getSettings(): array {
-    static $cache = null;
-    if ($cache !== null) return $cache;
-    $rows  = dbFetchAll('SELECT `key`, `value` FROM settings');
-    $cache = [];
-    foreach ($rows as $r) $cache[$r['key']] = $r['value'];
-    $cache += [
-        'shop_name'=>APP_NAME,'shop_address'=>'','shop_phone'=>'','shop_email'=>'',
-        'shop_logo_url'=>'','shop_tax_no'=>'','invoice_footer'=>'Thank you!',
-        'discount_enabled'=>'1','discount_type'=>'both','discount_max_percent'=>'100',
-        'discount_max_amount'=>'0','discount_default'=>'0','product_discount_enabled'=>'0',
-        'vat_enabled'=>'1','vat_default'=>'15','vat_inclusive'=>'0',
-        'points_enabled'=>'1','points_earn_rate'=>'1','points_redeem_rate'=>'0.01',
-        'points_min_redeem'=>'0','points_max_redeem_pct'=>'100','currency_symbol'=>'৳', 'api_key_sms' => '', 'sms_enabled' => '0', 'sms_balance' => '0',
-    ];
-    return $cache;
-}
-
 $action = $_POST['action'] ?? '';
-if ($action === 'save_settings') {
+if ($action === 'save_settings' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $fields = [
         'shop_name'=>trim($_POST['shop_name']??APP_NAME),
         'shop_address'=>trim($_POST['shop_address']??''),
@@ -69,12 +52,13 @@ if ($action === 'save_settings') {
     redirect('settings');
 }
 
-$S = getSettings();
+$S = getAllSettings();
 $pageTitle = 'Settings';
 require_once BASE_PATH . '/includes/header.php';
 ?>
 <h1 style="margin-bottom:16px">⚙️ System Settings</h1>
 <form method="POST">
+<input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
 <input type="hidden" name="action" value="save_settings">
 
 <div class="card mb-2">

@@ -58,6 +58,7 @@ if ($action === 'suggest_customers') {
 // ── Process sale ──────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'finalize_sale') {
     requireLogin();
+    verify_csrf();
     $cartItems = json_decode($_POST['cart_json'] ?? '[]', true) ?: [];
     if (empty($cartItems)) { flash('error', 'Cart is empty.'); redirect('pos'); }
 
@@ -306,12 +307,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'final
                     'to' => $customerPhone,
                 ];
                 if (($S['sms_balance'] ?? 0) >= 1) {
-                    $ch = curl_init($url);
-                    curl_setopt($ch, CURLOPT_POST, 1);
-                    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
-                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                    $response = json_decode(curl_exec($ch), true);
-                    curl_close($ch);
+                    $response = json_decode(sendHttpPost($url, $params), true);
                     if (isset($response['error']) && $response['error'] === 0) {
                         $rate = strlen($params['msg']) <= 160 ? 1 : ceil(strlen($params['msg']) / 160);
                         logAction('SINGLE_SMS', 'SMS', $rate, "To: {$params['to']} | Msg: {$params['msg']}");
@@ -830,6 +826,7 @@ body, html { background-color: var(--pos-bg) !important; color: var(--pos-text) 
 
       <form method="POST" id="checkoutForm" style="margin:0;">
         <input type="hidden" name="action" value="finalize_sale">
+        <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
         <input type="hidden" name="edit_sale_id" value="<?= $editSaleId ?>">
         <input type="hidden" name="customer_id" id="hdCustomerId">
         <input type="hidden" name="customer_phone" id="hdCustomerPhone">

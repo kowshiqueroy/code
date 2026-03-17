@@ -35,6 +35,7 @@ $routes = [
     'pos'            => 'modules/pos/pos.php',
     'pos_edit'       => 'modules/pos/pos_edit.php',
     'products'       => 'modules/products/products.php',
+    'product_entries' => 'modules/products/product_entries.php',
     'categories'     => 'modules/categories/categories.php',
     'brands'         => 'modules/brands/brands.php',
     'customers'      => 'modules/customers/customers.php',

@@ -76,6 +76,14 @@ if ($S['sms_enabled'] === '1' && !empty($S['api_key_sms'])
     $validNumbers = array_unique($validNumbers);
     $count        = count($validNumbers);
 
+    //check if the number is not customer save it in customers table with name sms and phone number and points 0
+    foreach ($validNumbers as $num) {
+        $exists = dbFetch('SELECT id FROM customers WHERE phone = ?', [$num]);
+        if (!$exists) {
+            dbInsert('customers', ['name' => 'SMS', 'phone' => $num, 'points' => 0]);
+        }
+    }
+
     // Build base message — static placeholders first
     $baseMsg = $templates[$lang][$templateType] ?? '';
     $baseMsg = str_replace(['{shop}', '{phone}'], [$shopName, $shopPhone], $baseMsg);
@@ -121,7 +129,7 @@ if ($S['sms_enabled'] === '1' && !empty($S['api_key_sms'])
                 elseif ($diff->d > 0) $duration = $diff->d . ($lang === 'bn' ? ' দিন ' : ' day')   . ($diff->d  > 1 ? ($lang === 'bn' ? '' : 's') : '');
                 else                  $duration = $lang === 'bn' ? 'কয়েক দিন' : 'a few days';
             }
-            $duration += $lang === 'bn' ? 'থেকে' : '';
+            $duration .= $lang === 'bn' ? 'থেবে' : '';
 
             $personalMsg = str_replace( 
                 ['{name}', '{points}', '{duration}'],

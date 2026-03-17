@@ -8,7 +8,8 @@ if (isLoggedIn()) { redirect('pos'); }
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (login(strtoupper(trim($_POST['username'] ?? '')), $_POST['password'] ?? '')) {
+    verify_csrf();
+    if (login(trim($_POST['username'] ?? ''), $_POST['password'] ?? '')) {
         redirect('pos');
     }
     $error = 'Invalid username or password.';
@@ -41,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <div class="card">
     <form method="POST">
+      <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
       <div class="form-group">
         <label class="form-label">Username</label>
         <input type="text" name="username" class="form-control" autofocus required>

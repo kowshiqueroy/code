@@ -8,7 +8,7 @@ define('APP_VERSION', '3.2.1');
 if (strpos($_SERVER['HTTP_HOST'], 'localhost') !== false) {
     define('BASE_URL',    'http://localhost/code/v3');
 } else {
-    define('BASE_URL',    'https://0e6e-202-191-127-233.ngrok-free.app/code/v3');
+    define('BASE_URL',    ' https://016f-202-191-127-232.ngrok-free.app/code/v3');
 }
 
 define('BASE_PATH',   __DIR__);
@@ -38,8 +38,9 @@ define('BARCODE_PATH', UPLOADS_PATH . '/barcodes');
 define('BARCODE_URL',  BASE_URL   . '/uploads/barcodes');
 
 // ── Error display (set false in production) ───────────────────
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
 error_reporting(E_ALL);
+ini_set('log_errors', 1);
 
 // ── Timezone ──────────────────────────────────────────────────
 date_default_timezone_set('Asia/Dhaka');

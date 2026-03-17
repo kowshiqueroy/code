@@ -7,6 +7,7 @@ $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 if ($action === 'save_product' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     requireLogin();
+    verify_csrf();
 
     $id   = (int)($_POST['product_id_db'] ?? 0);
     $data = [
@@ -87,7 +88,28 @@ if ($action === 'save_product' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($newVid) {
                 $barcode = str_pad((string)($newVid % 10000000000), 10, '0', STR_PAD_LEFT);
                 dbUpdate('product_variants', ['barcode' => $barcode], 'id = ?', [$newVid]);
+                $vid = $newVid; // Update $vid for the entry log
             }
+        }
+
+        // ── Log the entry (History of what was added) ──
+        if ($vdata['quantity'] > 0) {
+            dbInsert('product_entries', [
+                'product_id'   => $id,
+                'variant_id'   => $vid,
+                'product_name' => $data['name'],
+                'variant_name' => $vdata['variant_name'],
+                'size'         => $vdata['size'],
+                'color'        => $vdata['color'],
+                'cost'         => $vdata['cost'],
+                'price'        => $vdata['price'],
+                'regular'      => $vdata['regular'],
+                'qty_added'    => $vdata['quantity'],
+                'memo_number'  => $data['memo_number'],
+                'memo_date'    => $data['memo_date'],
+                'user_id'      => currentUser()['id'],
+                'created_at'   => now(),
+            ]);
         }
     }
 
@@ -295,6 +317,7 @@ require_once BASE_PATH . '/includes/header.php';
     </div>
     <div class="modal-body">
       <form method="POST" id="productForm">
+        <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
         <input type="hidden" name="action" value="save_product">
         <input type="hidden" name="product_id_db" id="productIdDb" value="<?= $editing['id'] ?? '' ?>">
 

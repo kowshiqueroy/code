@@ -7,6 +7,7 @@ requireRole(ROLE_ADMIN);
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 if ($action === 'save_user' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $id   = (int)($_POST['user_id_db'] ?? 0);
     $data = [
         'username'  => strtoupper(trim($_POST['username'])),
@@ -18,14 +19,11 @@ if ($action === 'save_user' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $data['password'] = password_hash($_POST['password'], PASSWORD_DEFAULT);
     }
     if ($id) {
-
-      //if session user id is not 1 and editing id is 1 then do not allow to update and show error message
-      if (currentUser()['id'] !== 1 && $id === 1) {
-        flash('error', 'You cannot edit the main admin user.');
-        redirect('users');
-      }
-        dbUpdate('users', $data, 'id = ?', [$id]);
-    
+        // if session user id is not 1 and editing id is 1 then do not allow to update and show error message
+        if (currentUser()['id'] !== 1 && $id === 1) {
+            flash('error', 'You cannot edit the main admin user.');
+            redirect('users');
+        }
         dbUpdate('users', $data, 'id = ?', [$id]);
         logAction('UPDATE', 'users', $id, 'Updated user: ' . $data['username'] . ' with data: ' . json_encode($data));
         flash('success', 'User updated.');
@@ -87,6 +85,7 @@ require_once BASE_PATH . '/includes/header.php';
     </div>
     <div class="modal-body">
       <form method="POST" id="userForm">
+        <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
         <input type="hidden" name="action"     value="save_user">
         <input type="hidden" name="user_id_db" value="<?= $editing['id'] ?? '' ?>">
         <div class="form-row cols-2">

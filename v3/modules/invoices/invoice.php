@@ -19,24 +19,20 @@ $qrUrl  = 'https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=' . urlen
 
 // --- Pagination Logic for A4 Print ---
 $pages = [];
-$temp_items = $items;
-if (count($temp_items) <= 5) {
+if (count($items) <= 5) {
     // Fits perfectly on one page with totals
-    $pages[] = ['items' => $temp_items, 'is_last' => true];
+    $pages[] = ['items' => $items, 'is_last' => true];
 } else {
     // Exceeds 5 items: Chunk into multiple pages
-    while (count($temp_items) > 0) {
-        if (count($temp_items) <= 5) {
-            $pages[] = ['items' => array_splice($temp_items, 0, 5), 'is_last' => true];
+    $chunks = array_chunk($items, 10);
+    foreach ($chunks as $i => $chunk) {
+        $isLast = ($i === count($chunks) - 1);
+        if ($isLast && count($chunk) > 5) {
+            $pages[] = ['items' => $chunk, 'is_last' => false];
+            $pages[] = ['items' => [], 'is_last' => true];
         } else {
-            $take = min(10, count($temp_items));
-            $pages[] = ['items' => array_splice($temp_items, 0, $take), 'is_last' => false];
+            $pages[] = ['items' => $chunk, 'is_last' => $isLast];
         }
-    }
-    // If the last slice happened to be a block of 6-10 items, we need a final blank page just for totals
-    $last_page = end($pages);
-    if (!$last_page['is_last']) {
-        $pages[] = ['items' => [], 'is_last' => true];
     }
 }
 
